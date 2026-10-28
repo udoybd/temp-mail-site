@@ -35,6 +35,7 @@ final class Config
             'adsense_client' => '',             // e.g. ca-pub-1234567890; ads stay hidden while empty
             'adsense_slot' => '',
             'analytics_id' => '',               // Google Analytics G-XXXX, optional
+            'timezone' => 'Asia/Dhaka',         // used for daily counts in /admin
         ];
     }
 

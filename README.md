@@ -41,3 +41,13 @@ composer install && bin/trim-vendor.sh
 TMS_STORAGE=/tmp/tms php -S 127.0.0.1:8080 -t public tests/dev-router.php
 ```
 `vendor/` is committed because shared hosting usually has no Composer.
+
+## Admin panel
+
+Open `/admin`. The first time, it asks for the setup code from
+`storage/admin-setup-code.txt` (open it in cPanel File Manager) and a new password.
+Forgot the password? Delete `storage/admin.php` and open `/admin` again.
+
+The panel shows counts (addresses and emails per day), live totals, delivery speed,
+whether the cleanup cron runs, the latest emails and addresses, and the logs.
+Mail domains are added, paused, made default or removed under **Domains**.

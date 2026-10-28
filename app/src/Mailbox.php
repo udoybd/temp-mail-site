@@ -12,9 +12,14 @@ final class Mailbox
         'lion', 'lynx', 'maple', 'meteor', 'otter', 'owl', 'panda', 'pebble', 'pine', 'puffin', 'raven', 'river',
         'robin', 'shark', 'tiger', 'tulip', 'walrus', 'whale', 'willow', 'wolf', 'yak', 'zebra'];
 
+    /** Active mail domains, default first. Managed from /admin; config.php seeds the list. */
     public static function domains(): array
     {
-        return array_values(array_map('strtolower', (array) Config::get('domains')));
+        $rows = Db::all('SELECT name FROM domains WHERE active = 1 ORDER BY position, added_at');
+        if (!$rows) {
+            return array_values(array_map('strtolower', (array) Config::get('domains')));
+        }
+        return array_column($rows, 'name');
     }
 
     public static function forAccount(int $accountId): array
@@ -71,6 +76,7 @@ final class Mailbox
             'INSERT INTO mailboxes (account_id, address, created_at, expires_at) VALUES (?, ?, ?, ?)',
             [$accountId, $address, $now, $now + $ttl]
         );
+        Stats::bump('mailboxes');
         return ['id' => $id, 'address' => $address, 'created_at' => $now, 'expires_at' => $now + $ttl, 'unread' => 0];
     }
 

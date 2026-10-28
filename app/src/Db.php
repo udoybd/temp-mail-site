@@ -65,6 +65,56 @@ final class Db
             $pdo->exec('ALTER TABLE messages ADD COLUMN server_at INTEGER');
             $pdo->exec('PRAGMA user_version = 2');
         }
+        if ($version < 3) {
+            self::addAdminTables($pdo);
+        }
+    }
+
+    /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
+    private static function addAdminTables(PDO $pdo): void
+    {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS domains (
+    name TEXT PRIMARY KEY,
+    active INTEGER NOT NULL DEFAULT 1,
+    position INTEGER NOT NULL DEFAULT 0,
+    added_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS stats (
+    day TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    n INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, metric)
+);
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+SQL);
+        $insert = $pdo->prepare('INSERT OR IGNORE INTO domains (name, active, position, added_at) VALUES (?, 1, ?, ?)');
+        foreach (array_values((array) Config::get('domains')) as $i => $name) {
+            $insert->execute([strtolower((string) $name), $i, time()]);
+        }
+        // Count what is already stored so the charts do not start at zero.
+        $bump = $pdo->prepare('INSERT INTO stats (day, metric, n) VALUES (?, ?, 1) ON CONFLICT(day, metric) DO UPDATE SET n = n + 1');
+        foreach ($pdo->query('SELECT created_at AS t FROM mailboxes')->fetchAll() as $row) {
+            $bump->execute([Stats::day((int) $row['t']), 'mailboxes']);
+        }
+        foreach ($pdo->query('SELECT received_at AS t FROM messages')->fetchAll() as $row) {
+            $bump->execute([Stats::day((int) $row['t']), 'emails']);
+        }
+        $pdo->exec('PRAGMA user_version = 3');
+    }
+
+    public static function setting(string $key): ?string
+    {
+        $row = self::one('SELECT value FROM settings WHERE key = ?', [$key]);
+        return $row ? (string) $row['value'] : null;
+    }
+
+    public static function setSetting(string $key, string $value): void
+    {
+        self::run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [$key, $value]);
     }
 
     private static function createTables(PDO $pdo): void

@@ -22,6 +22,11 @@ if (str_starts_with($path, '/api/')) {
     return;
 }
 
+if ($path === '/admin' || str_starts_with($path, '/admin/')) {
+    Tms\Admin::handle($method, $path);
+    return;
+}
+
 // Email HTML is served on its own URL and shown in a sandboxed iframe: no scripts, no access to the site.
 if (preg_match('#^/m/(\d+)/html$#', $path, $m)) {
     $account = Account::current();

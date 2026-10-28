@@ -18,6 +18,7 @@ final class Message
     {
         if (strlen($raw) > (int) Config::get('max_message_bytes')) {
             Log::write('ingest', 'dropped oversized message (' . strlen($raw) . ' bytes)');
+            Stats::bump('dropped');
             return null;
         }
 
@@ -48,6 +49,8 @@ final class Message
 
         $box = Mailbox::findForRecipients(array_values(array_unique($recipients)));
         if (!$box) {
+            Log::write('ingest', 'no live mailbox for ' . implode(', ', array_slice(array_unique($recipients), 0, 3)));
+            Stats::bump('dropped');
             return null;
         }
 
@@ -81,6 +84,8 @@ final class Message
                 $sentAt, $serverAt,
             ]
         );
+
+        Stats::bump('emails');
 
         $dir = TMS_STORAGE . '/attachments/' . $id;
         foreach ($mail->getAllAttachmentParts() as $i => $part) {
