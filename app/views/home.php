@@ -69,6 +69,7 @@ $faq = [
         </header>
         <h3 id="r-subject"></h3>
         <div class="reader-from"><img id="r-icon" class="favicon" alt="" width="32" height="32"><div><strong id="r-from"></strong><div class="muted small" id="r-addr"></div></div><span class="muted small" id="r-time"></span></div>
+        <p class="muted small delivery" id="r-delivery" hidden></p>
         <div class="otp-bar" id="r-otp" hidden><span>Code</span><strong id="r-otp-code"></strong><button class="btn btn-primary btn-sm" type="button" id="btn-copy-otp">Copy code</button></div>
         <div class="otp-bar" id="r-link" hidden><span>Link</span><a id="r-link-a" target="_blank" rel="noopener noreferrer nofollow">Open confirmation link</a></div>
         <div class="tabs" id="r-tabs" hidden><button type="button" data-view="html" class="on">HTML</button><button type="button" data-view="text">Text</button></div>

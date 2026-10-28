@@ -56,9 +56,19 @@ final class Db
     private static function migrate(PDO $pdo): void
     {
         $version = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
-        if ($version >= 1) {
-            return;
+        if ($version < 1) {
+            self::createTables($pdo);
         }
+        if ($version < 2) {
+            // When the sender sent it and when our mail server accepted it, to show delivery delay.
+            $pdo->exec('ALTER TABLE messages ADD COLUMN sent_at INTEGER');
+            $pdo->exec('ALTER TABLE messages ADD COLUMN server_at INTEGER');
+            $pdo->exec('PRAGMA user_version = 2');
+        }
+    }
+
+    private static function createTables(PDO $pdo): void
+    {
         $pdo->exec(<<<'SQL'
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY,

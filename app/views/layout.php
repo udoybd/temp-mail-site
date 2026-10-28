@@ -2,7 +2,7 @@
 /** @var string $content @var string $title @var string $description @var string $site @var string $siteUrl @var string $path */
 $fullTitle = !empty($home) ? $title : $title . ' | ' . $site;
 $canonical = $siteUrl . ($path === '/' ? '' : $path);
-$v = '3';
+$v = '4';
 ?><!doctype html>
 <html lang="en">
 <head>

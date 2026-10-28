@@ -30,7 +30,7 @@ final class Config
             'mailboxes_per_ip_per_day' => 30,
             'max_mailboxes_per_account' => 10,
             'max_message_bytes' => 10 * 1024 * 1024,
-            'poll_seconds' => 5,
+            'poll_interval' => 2,           // seconds between inbox checks in the browser
             'ingest_secret' => '',              // shared secret for the Cloudflare Email Worker webhook
             'adsense_client' => '',             // e.g. ca-pub-1234567890; ads stay hidden while empty
             'adsense_slot' => '',
@@ -66,9 +66,14 @@ final class Config
             }
         }
         @file_put_contents(TMS_STORAGE . '/.htaccess', "Require all denied\n");
-        $values = self::defaults();
-        $values['ingest_secret'] = bin2hex(random_bytes(24));
-        $values['app_key'] = bin2hex(random_bytes(32));
+        // Only the per-site values are written; everything else keeps following defaults() on updates.
+        $values = [
+            'site_url' => self::defaults()['site_url'],
+            'domains' => self::defaults()['domains'],
+            'adsense_client' => '',
+            'ingest_secret' => bin2hex(random_bytes(24)),
+            'app_key' => bin2hex(random_bytes(32)),
+        ];
         $php = "<?php\n// Temp Mail Site settings. Generated on first run; safe to edit.\nreturn " . var_export($values, true) . ";\n";
         file_put_contents($file, $php, LOCK_EX);
         @chmod($file, 0640);

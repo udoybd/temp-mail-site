@@ -67,12 +67,18 @@ final class Message
             $text = self::htmlToText($html);
         }
 
+        $sentAt = self::time((string) ($mail->getHeaderValue(HeaderConsts::DATE) ?? ''));
+        $received = $mail->getAllHeadersByName('Received');
+        // The top Received header is the one our own server added when it accepted the mail.
+        $serverAt = $received ? self::time((string) substr(strrchr((string) $received[0]->getRawValue(), ';') ?: '', 1)) : null;
+
         $id = Db::insert(
-            'INSERT INTO messages (mailbox_id, from_name, from_addr, subject, text_body, html_body, otp, link, size, received_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO messages (mailbox_id, from_name, from_addr, subject, text_body, html_body, otp, link, size, received_at, sent_at, server_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $box['id'], mb_substr($fromName, 0, 200), mb_substr($fromAddr, 0, 200), mb_substr($subject, 0, 500),
                 $text, $html, Otp::find($subject . "\n" . $text), Otp::findLink($text, $html), strlen($raw), time(),
+                $sentAt, $serverAt,
             ]
         );
 
@@ -95,6 +101,12 @@ final class Message
             );
         }
         return $id;
+    }
+
+    private static function time(string $value): ?int
+    {
+        $ts = strtotime(trim($value));
+        return $ts === false ? null : $ts;
     }
 
     public static function listFor(int $mailboxId): array

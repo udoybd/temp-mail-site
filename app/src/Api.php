@@ -29,7 +29,7 @@ final class Api
             Http::json([
                 'domains' => Mailbox::domains(),
                 'allow_custom' => (bool) Config::get('allow_custom_names'),
-                'poll_seconds' => (int) Config::get('poll_seconds'),
+                'poll_seconds' => max(1, (int) Config::get('poll_interval')),
                 'account' => $account ? Account::info($account) : null,
                 'mailboxes' => $account ? self::boxes($account) : [],
             ]);
@@ -72,6 +72,8 @@ final class Api
                 Db::run('UPDATE messages SET seen = 1 WHERE id = ?', [$msg['id']]);
                 $out = self::summary($msg);
                 $out['text'] = $msg['text_body'];
+                $out['sent_at'] = $msg['sent_at'] !== null ? (int) $msg['sent_at'] : null;
+                $out['server_at'] = $msg['server_at'] !== null ? (int) $msg['server_at'] : null;
                 $out['has_html'] = trim((string) $msg['html_body']) !== '';
                 $out['attachments'] = array_map(fn ($a) => [
                     'id' => (int) $a['id'], 'filename' => $a['filename'], 'mime' => $a['mime'], 'size' => (int) $a['size'],

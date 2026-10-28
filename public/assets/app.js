@@ -180,6 +180,14 @@
     $('r-addr').textContent = m.from_addr;
     $('r-time').textContent = ago(m.received_at);
     $('r-icon').src = icon(m.domain);
+    const d = $('r-delivery');
+    d.hidden = !m.server_at;
+    if (m.server_at) {
+      const parts = [];
+      if (m.sent_at) parts.push('reached our server ' + Math.max(0, m.server_at - m.sent_at) + 's after sending');
+      parts.push('saved ' + Math.max(0, m.received_at - m.server_at) + 's later');
+      d.textContent = 'Delivery: ' + parts.join(', ');
+    }
     $('r-otp').hidden = !m.otp;
     $('r-otp-code').textContent = m.otp || '';
     $('r-link').hidden = !m.link;
