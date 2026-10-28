@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /api/
+Disallow: /m/
+Disallow: /attachment/
+Disallow: /link/
+Sitemap: https://jamaluddin.info/sitemap.xml
