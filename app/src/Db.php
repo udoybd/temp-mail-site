@@ -68,6 +68,12 @@ final class Db
         if ($version < 3) {
             self::addAdminTables($pdo);
         }
+        if ($version < 4) {
+            // How the mail reached us (pipe or cloudflare) and each server hop's time, for /admin.
+            $pdo->exec('ALTER TABLE messages ADD COLUMN via TEXT');
+            $pdo->exec('ALTER TABLE messages ADD COLUMN trace TEXT');
+            $pdo->exec('PRAGMA user_version = 4');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */

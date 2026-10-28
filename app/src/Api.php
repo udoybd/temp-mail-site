@@ -139,7 +139,7 @@ final class Api
         }
         $raw = (string) file_get_contents('php://input');
         $rcpt = (string) ($_SERVER['HTTP_X_RCPT_TO'] ?? '');
-        $id = Message::ingest($raw, $rcpt !== '' ? [$rcpt] : []);
+        $id = Message::ingest($raw, $rcpt !== '' ? [$rcpt] : [], 'cloudflare');
         Http::json(['stored' => $id !== null]);
     }
 

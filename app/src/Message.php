@@ -13,8 +13,9 @@ final class Message
      * no live mailbox matches (mail to unknown addresses is dropped).
      *
      * @param string[] $envelopeRecipients recipients known from the delivery (pipe env or webhook)
+     * @param string $via 'pipe' (cPanel mail server) or 'cloudflare' (Email Worker)
      */
-    public static function ingest(string $raw, array $envelopeRecipients = []): ?int
+    public static function ingest(string $raw, array $envelopeRecipients = [], string $via = 'pipe'): ?int
     {
         if (strlen($raw) > (int) Config::get('max_message_bytes')) {
             Log::write('ingest', 'dropped oversized message (' . strlen($raw) . ' bytes)');
@@ -74,14 +75,22 @@ final class Message
         $received = $mail->getAllHeadersByName('Received');
         // The top Received header is the one our own server added when it accepted the mail.
         $serverAt = $received ? self::time((string) substr(strrchr((string) $received[0]->getRawValue(), ';') ?: '', 1)) : null;
+        $trace = [];
+        foreach (array_reverse($received) as $header) {
+            $value = (string) $header->getRawValue();
+            $at = self::time((string) substr(strrchr($value, ';') ?: '', 1));
+            if ($at !== null) {
+                $trace[] = [preg_match('/\bby\s+([^\s;()]+)/i', $value, $by) ? mb_substr($by[1], 0, 80) : '?', $at];
+            }
+        }
 
         $id = Db::insert(
-            'INSERT INTO messages (mailbox_id, from_name, from_addr, subject, text_body, html_body, otp, link, size, received_at, sent_at, server_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO messages (mailbox_id, from_name, from_addr, subject, text_body, html_body, otp, link, size, received_at, sent_at, server_at, via, trace)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $box['id'], mb_substr($fromName, 0, 200), mb_substr($fromAddr, 0, 200), mb_substr($subject, 0, 500),
                 $text, $html, Otp::find($subject . "\n" . $text), Otp::findLink($text, $html), strlen($raw), time(),
-                $sentAt, $serverAt,
+                $sentAt, $serverAt, $via, json_encode(array_slice($trace, -8)),
             ]
         );
 

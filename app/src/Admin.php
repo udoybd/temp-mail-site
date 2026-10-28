@@ -320,7 +320,7 @@ final class Admin
         if ($tab === 'mail') {
             return [
                 'emails' => Db::all(
-                    'SELECT msg.id, msg.from_name, msg.from_addr, msg.subject, msg.otp, msg.size, msg.received_at, msg.sent_at, box.address
+                    'SELECT msg.id, msg.from_name, msg.from_addr, msg.subject, msg.otp, msg.size, msg.received_at, msg.sent_at, msg.via, msg.trace, box.address
                      FROM messages msg JOIN mailboxes box ON box.id = msg.mailbox_id ORDER BY msg.received_at DESC LIMIT 50'
                 ),
                 'boxes' => Db::all(

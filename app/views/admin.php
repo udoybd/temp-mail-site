@@ -213,7 +213,7 @@ ol li { margin-bottom: 6px; }
   <?php elseif ($tab === 'mail'): ?>
     <h2>Latest emails received</h2>
     <div class="tbl-wrap"><table>
-      <tr><th>Time</th><th>To</th><th>From</th><th>Subject</th><th>Code</th><th class="num">Delay</th></tr>
+      <tr><th>Time</th><th>To</th><th>From</th><th>Subject</th><th>Code</th><th class="num">Delay</th><th>Route and time at each server</th></tr>
       <?php foreach ($emails as $m): ?>
         <tr>
           <td class="small" style="white-space:nowrap"><?= $t($m['received_at']) ?></td>
@@ -222,9 +222,24 @@ ol li { margin-bottom: 6px; }
           <td class="small"><?= $e(mb_strimwidth((string) $m['subject'], 0, 70, '…')) ?></td>
           <td class="small"><?= $e((string) $m['otp']) ?></td>
           <td class="num small"><?= $m['sent_at'] ? max(0, (int) $m['received_at'] - (int) $m['sent_at']) . 's' : '-' ?></td>
+          <td class="small" style="min-width:260px">
+            <?php if ($m['via']): ?><span class="pill <?= $m['via'] === 'cloudflare' ? 'on' : '' ?>"><?= $m['via'] === 'cloudflare' ? 'Cloudflare' : 'Hosting mail server' ?></span><br><?php endif; ?>
+            <?php
+            $prev = $m['sent_at'] ? (int) $m['sent_at'] : null;
+            $steps = $prev ? ['sent'] : [];
+            foreach ((array) json_decode((string) $m['trace'], true) as [$by, $at]) {
+                $steps[] = $e($by) . ($prev !== null ? ' <strong>+' . ((int) $at - $prev) . 's</strong>' : '');
+                $prev = (int) $at;
+            }
+            if ($prev !== null) {
+                $steps[] = 'saved <strong>+' . ((int) $m['received_at'] - $prev) . 's</strong>';
+            }
+            echo implode(' &rarr; ', $steps);
+            ?>
+          </td>
         </tr>
       <?php endforeach; ?>
-      <?php if (!$emails): ?><tr><td colspan="6" class="muted">No emails stored right now (each is kept 3 hours).</td></tr><?php endif; ?>
+      <?php if (!$emails): ?><tr><td colspan="7" class="muted">No emails stored right now (each is kept 3 hours).</td></tr><?php endif; ?>
     </table></div>
 
     <h2>Latest addresses created</h2>
