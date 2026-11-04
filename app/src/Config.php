@@ -15,13 +15,13 @@ final class Config
     {
         return [
             'site_name' => 'Temp Mail Site',
-            'site_url' => 'https://jamaluddin.info',
+            'site_url' => 'https://bengal.email',
             // Domains that receive mail. The first one is the default for new addresses.
-            'domains' => ['jamaluddin.info'],
+            'domains' => ['bengal.email'],
             // Local parts nobody can take (real mailboxes and role addresses).
             'reserved' => ['admin', 'administrator', 'support', 'postmaster', 'abuse', 'info', 'root',
                 'webmaster', 'hostmaster', 'noreply', 'no-reply', 'mail', 'security', 'contact', 'help'],
-            'support_email' => 'support@jamaluddin.info',
+            'support_email' => 'support@bengal.email',
             'allow_custom_names' => true,
             'email_ttl' => 3 * 3600,            // each email is deleted 3 hours after it arrives
             // Address lifetime is fixed at 24 hours in Mailbox::LIFETIME.
