@@ -1,6 +1,6 @@
 <?php
 /** @var string $content @var string $title @var string $description @var string $site @var string $siteUrl @var string $path @var array $cs */
-$fullTitle = !empty($home) ? $title : $title . ' | ' . $site;
+$fullTitle = !empty($home) ? $title : $site . ' | ' . $title;
 $canonical = $siteUrl . ($path === '/' ? '' : $path);
 $v = '7';
 $nav = ['/' => 'Home', '/features' => 'Features', '/faq' => 'FAQ', '/blog' => 'Blog', '/contact' => 'Contact'];

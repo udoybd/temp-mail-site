@@ -24,7 +24,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Admin | <?= $e($site) ?></title>
+<title><?= $e($site) ?> | Admin</title>
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="/assets/app.css?v=6">
