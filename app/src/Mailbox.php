@@ -37,8 +37,15 @@ final class Mailbox
         return Db::one('SELECT * FROM mailboxes WHERE id = ? AND account_id = ?', [$mailboxId, $accountId]);
     }
 
-    /** A deleted address can be taken again (by anyone) this long after it was deleted. */
-    public const REUSE_AFTER = 86400;
+
+    /** Every address works for exactly this long after it is made (fixed, not read from config.php). */
+    public const LIFETIME = 86400;
+
+    /** Cuts any mailbox that would live longer than LIFETIME, e.g. ones made under the old 5/30-day rule. */
+    public static function enforceLifetime(): void
+    {
+        Db::run('UPDATE mailboxes SET expires_at = created_at + ' . self::LIFETIME . ' WHERE expires_at > created_at + ' . self::LIFETIME);
+    }
 
     /** The account's own live mailbox with this address, if it has one. */
     public static function ownedByAddress(int $accountId, string $address): ?array
@@ -90,11 +97,11 @@ final class Mailbox
             if (!preg_match('/^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$/', $local) || str_contains($local, '..')) {
                 throw new UserError('Use 3 to 30 letters, numbers, dots, dashes or underscores.');
             }
-            $released = Db::one('SELECT released_at FROM released_addresses WHERE address = ?', [$local . '@' . $domain]);
-            $wait = $released ? (int) $released['released_at'] + self::REUSE_AFTER - time() : 0;
-            if ($wait > 0 && !Db::one('SELECT 1 FROM mailboxes WHERE address = ?', [$local . '@' . $domain])) {
-                $h = (int) ceil($wait / 3600);
-                throw new UserError('This address was deleted recently. It can be used again in ' . $h . ($h === 1 ? ' hour.' : ' hours.'));
+            // A live address belongs to whoever made it until it expires (24 hours). Deleted or expired ones are free at once.
+            $live = Db::one('SELECT expires_at FROM mailboxes WHERE address = ?', [$local . '@' . $domain]);
+            if ($live) {
+                $h = max(1, (int) ceil(((int) $live['expires_at'] - time()) / 3600));
+                throw new UserError('That address is in use. It becomes free in about ' . $h . ($h === 1 ? ' hour' : ' hours') . ', or pick another name.');
             }
             if (!self::available($local . '@' . $domain)) {
                 throw new UserError('That address is taken. Try another name.');
@@ -103,8 +110,7 @@ final class Mailbox
             $local = self::randomFree($domain);
         }
 
-        $info = Db::one('SELECT linked FROM accounts WHERE id = ?', [$accountId]);
-        $ttl = (int) Config::get(!empty($info['linked']) ? 'linked_mailbox_ttl' : 'guest_mailbox_ttl');
+        $ttl = self::LIFETIME;
         $now = time();
         $address = $local . '@' . $domain;
         $id = Db::insert(
@@ -122,8 +128,7 @@ final class Mailbox
         if (in_array($local, (array) Config::get('reserved'), true)) {
             return false;
         }
-        return !Db::one('SELECT 1 FROM mailboxes WHERE address = ?', [$address])
-            && !Db::one('SELECT 1 FROM released_addresses WHERE address = ? AND released_at > ?', [$address, time() - self::REUSE_AFTER]);
+        return !Db::one('SELECT 1 FROM mailboxes WHERE address = ?', [$address]);
     }
 
     public static function delete(int $mailboxId, string $reason): void

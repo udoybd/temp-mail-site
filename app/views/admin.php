@@ -357,7 +357,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <?php foreach ($boxes as $b): ?>
         <tr>
           <td class="small"><a href="/admin?tab=mail&amp;q=<?= $e(rawurlencode((string) $b['address'])) ?>"><?= $e($b['address']) ?></a></td>
-          <td class="small" style="white-space:nowrap"><?= $t($b['created_at']) ?></td>
+          <td class="small" style="white-space:nowrap"><?= !empty($b['backfilled']) ? '<span class="muted">before history</span>' : $t($b['created_at']) ?></td>
           <td class="small" style="white-space:nowrap">
             <?php if ($b['ended_at'] === null && $b['expires_at'] !== null && (int) $b['expires_at'] > time()): ?>
               <span class="pill on">live</span> until <?= $t($b['expires_at']) ?>

@@ -24,8 +24,7 @@ final class Config
             'support_email' => 'support@jamaluddin.info',
             'allow_custom_names' => true,
             'email_ttl' => 3 * 3600,            // each email is deleted 3 hours after it arrives
-            'guest_mailbox_ttl' => 86400,       // every address works for 24 hours from when it is made
-            'linked_mailbox_ttl' => 86400,      // same for accounts with a recovery code or linked device
+            // Address lifetime is fixed at 24 hours in Mailbox::LIFETIME.
             'idle_account_ttl' => 30 * 86400,
             'mailboxes_per_ip_per_day' => 30,
             'max_mailboxes_per_account' => 10,

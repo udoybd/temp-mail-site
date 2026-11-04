@@ -2,7 +2,8 @@
 // The FAQ that ships with the site. It is copied into the database once; after that edit it in /admin → FAQ.
 return [
     ['What is temp mail?', 'Temp mail is a free, disposable email address you can use instead of your real one. Use it to sign up, get a verification code or download something, then let it expire. Your real inbox stays free of spam.'],
-    ['How long do mailboxes and emails last?', 'Every address works for 24 hours from the moment it is made. Each email is deleted automatically 3 hours after it arrives. If you delete an address yourself, that name can be used again after 24 hours.'],
+    ['How long do mailboxes and emails last?', 'Every address works for 24 hours from the moment it is made. Each email is deleted automatically 3 hours after it arrives.'],
+    ['Can I get the same address again?', 'Yes. If you press Delete, the address is free straight away and you can make it again at once with Change. If you do not delete it and just switch to another address (New Address or Change), it stays yours for its full 24 hours: open it again from the list under Account, or type the same name under Change. During those 24 hours nobody else can take that name; after it expires, anyone can.'],
     ['Can I use temp mail for verification codes?', 'Yes. Codes and confirmation links usually arrive within seconds. We detect the code and show a one-tap copy button next to the email.'],
     ['Is temp mail safe and legal?', 'Yes, using a disposable address to protect your privacy is legal. Do not use it for accounts you need to keep (banking, work, government) or for anything that breaks the law or another site\'s rules.'],
     ['Why does a website say my email is not allowed?', 'Some sites block known disposable domains. Try again with a new address, or pick a different domain if more than one is offered.'],

@@ -9,8 +9,8 @@
 <ul>
 <li>Each email is deleted <strong>3 hours</strong> after it arrives.</li>
 <li>Each address works for <strong>24 hours</strong> from the moment it is made.</li>
-<li>Switched to another address? Type the old name under <strong>Change</strong> to open it again while it is still active.</li>
-<li>Deleted an address? Its name can be used again after <strong>24 hours</strong>.</li>
+<li>Pressed <strong>Delete</strong>? The name is free at once, so you can make the same address again straight away.</li>
+<li>Switched without deleting? The old address stays yours for its 24 hours. Open it from <strong>Account</strong> or type the name under <strong>Change</strong>. Nobody else can take it until it expires.</li>
 <li>Accounts that are not used for 30 days are deleted.</li>
 </ul>
 <h2>Use it on your phone too</h2>
