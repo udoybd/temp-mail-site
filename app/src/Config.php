@@ -14,7 +14,7 @@ final class Config
     public static function defaults(): array
     {
         return [
-            'site_name' => 'Temp Mail Site',
+            'site_name' => 'Bengal Email',
             'site_url' => 'https://bengal.email',
             // Domains that receive mail. The first one is the default for new addresses.
             'domains' => ['bengal.email'],
@@ -74,7 +74,7 @@ final class Config
             'ingest_secret' => bin2hex(random_bytes(24)),
             'app_key' => bin2hex(random_bytes(32)),
         ];
-        $php = "<?php\n// Temp Mail Site settings. Generated on first run; safe to edit.\nreturn " . var_export($values, true) . ";\n";
+        $php = "<?php\n// Bengal Email settings. Generated on first run; safe to edit.\nreturn " . var_export($values, true) . ";\n";
         file_put_contents($file, $php, LOCK_EX);
         @chmod($file, 0640);
     }

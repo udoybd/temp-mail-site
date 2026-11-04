@@ -115,7 +115,7 @@ final class Admin
 
     private static function savePassword(string $password): void
     {
-        $php = "<?php\n// Temp Mail Site admin password. Delete this file to set a new password at /admin.\nreturn "
+        $php = "<?php\n// Bengal Email admin password. Delete this file to set a new password at /admin.\nreturn "
             . var_export(['hash' => password_hash($password, PASSWORD_DEFAULT), 'set_at' => time()], true) . ";\n";
         file_put_contents(self::passwordFile(), $php, LOCK_EX);
         @chmod(self::passwordFile(), 0600);

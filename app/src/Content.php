@@ -13,14 +13,14 @@ final class Content
 {
     /** Pages the owner can edit: slug => [default title, default meta description]. Order = admin list order. */
     public const PAGES = [
-        'features' => ['Features', 'Everything Temp Mail Site can do: instant address, live inbox, one-tap codes, custom names, attachments and device sync.'],
+        'features' => ['Features', 'Everything Bengal Email can do: instant address, live inbox, one-tap codes, custom names, attachments and device sync.'],
         'faq' => ['Frequently asked questions', 'Answers about temporary email: how long it lasts, verification codes, safety, custom addresses and more.'],
-        'contact' => ['Contact us', 'Get in touch with the Temp Mail Site team for help, feedback or abuse reports.'],
-        'how-it-works' => ['How Temp Mail Site works', 'Get a free disposable email in three steps: copy the address, use it anywhere, read the code and let it expire.'],
-        'about' => ['About us', 'Temp Mail Site gives you a free, private, disposable email address with no sign-up.'],
+        'contact' => ['Contact us', 'Get in touch with the Bengal Email team for help, feedback or abuse reports.'],
+        'how-it-works' => ['How Bengal Email works', 'Get a free disposable email in three steps: copy the address, use it anywhere, read the code and let it expire.'],
+        'about' => ['About us', 'Bengal Email gives you a free, private, disposable email address with no sign-up.'],
         'support' => ['Support', 'Get help with your temporary inbox, recovery code or account.'],
-        'privacy' => ['Privacy Policy', 'What Temp Mail Site stores, for how long, and who can see it.'],
-        'terms' => ['Terms of Use', 'The rules for using Temp Mail Site.'],
+        'privacy' => ['Privacy Policy', 'What Bengal Email stores, for how long, and who can see it.'],
+        'terms' => ['Terms of Use', 'The rules for using Bengal Email.'],
     ];
 
     /** Site-wide text and links editable under Admin → Settings. key => [label, default]. */
