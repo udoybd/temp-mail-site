@@ -107,7 +107,7 @@
     state.known = new Set();
     localSet('tms_box', String(box.id));
     $('addr').value = box.address;
-    $('addr-expiry').textContent = 'Active · expires in ' + left(box.expires_at);
+    $('addr-expiry').textContent = 'Active – Expires in ' + left(box.expires_at);
     $('mail-list').innerHTML = '';
     closeReader();
     renderBoxes();
@@ -147,6 +147,7 @@
     const list = $('mail-list');
     list.innerHTML = '';
     $('empty').hidden = state.messages.length > 0;
+    $('inbox-count').textContent = String(state.messages.length);
     state.messages.forEach((m) => {
       const li = el('li', 'mail' + (m.seen ? '' : ' unread'));
       const img = el('img', 'favicon');
@@ -234,10 +235,12 @@
   function loop() {
     clearTimeout(state.timer);
     state.timer = setTimeout(async () => {
-      if (!document.hidden) await refresh(false);
+      if (!document.hidden && autoRefresh()) await refresh(false);
       loop();
     }, state.poll * 1000);
   }
+
+  function autoRefresh() { const a = $('auto-refresh'); return !a || a.checked; }
 
   function showError(e) { toast(e.message || 'Something went wrong'); }
 
@@ -281,7 +284,21 @@
       closeReader();
     };
     document.querySelectorAll('#r-tabs button').forEach((b) => { b.onclick = () => showView(b.dataset.view); });
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(false); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && autoRefresh()) refresh(false); });
+    const auto = $('auto-refresh');
+    auto.checked = localGet('tms_auto') !== '0';
+    const showAuto = () => {
+      const pill = $('live-pill');
+      pill.classList.toggle('paused', !auto.checked);
+      pill.lastChild.textContent = auto.checked ? 'Live Inbox' : 'Paused';
+    };
+    auto.onchange = () => {
+      localSet('tms_auto', auto.checked ? '1' : '0');
+      showAuto();
+      toast(auto.checked ? 'Auto refresh on' : 'Auto refresh off. Press Refresh to check.');
+      if (auto.checked) refresh(false);
+    };
+    showAuto();
     init().then(loop).catch(showError);
 
     const q = new URLSearchParams(location.search);
@@ -358,6 +375,74 @@
         delForm.hidden = true;
       } catch (e) { showError(e); }
     };
+  }
+
+  // ---------- contact form ----------
+  const contact = $('contact-form');
+  if (contact) {
+    contact.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const f = contact.elements;
+      if (!contact.reportValidity()) return;
+      const btn = contact.querySelector('button[type=submit]');
+      btn.disabled = true;
+      try {
+        await api('POST', '/api/contact', {
+          name: f.name.value, email: f.email.value, subject: f.subject.value, message: f.message.value, website: f.website.value,
+        });
+        contact.hidden = true;
+        $('contact-done').hidden = false;
+      } catch (e) { showError(e); }
+      btn.disabled = false;
+    };
+  }
+
+  // ---------- header: menu, dark mode, language ----------
+  const menuBtn = $('menu-btn');
+  if (menuBtn) {
+    menuBtn.onclick = () => {
+      const open = $('nav').classList.toggle('open');
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+  }
+  const themeBtn = $('theme-toggle');
+  if (themeBtn) {
+    themeBtn.onclick = () => {
+      const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+      if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme');
+      localSet('tms_theme', dark ? 'dark' : 'light');
+    };
+  }
+
+  // Translation uses Google's free website translator, loaded only when a visitor picks another language.
+  function currentLang() {
+    const m = document.cookie.match(/(?:^|; )googtrans=\/[^/]*\/([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : 'en';
+  }
+  function setLangCookie(value) {
+    const host = location.hostname;
+    const expires = value ? '' : '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    const v = value ? '/en/' + value : '';
+    document.cookie = 'googtrans=' + v + '; path=/' + expires;
+    if (host.indexOf('.') > 0) document.cookie = 'googtrans=' + v + '; path=/; domain=.' + host.replace(/^www\./, '') + expires;
+  }
+  const lang = currentLang();
+  document.querySelectorAll('.lang-select').forEach((sel) => {
+    if ([...sel.options].some((o) => o.value === lang)) sel.value = lang;
+    sel.onchange = () => {
+      setLangCookie(sel.value === 'en' ? '' : sel.value);
+      location.reload();
+    };
+  });
+  if (lang !== 'en') {
+    window.tmsTranslateInit = () => {
+      try { new window.google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element'); } catch (e) { /* ignore */ }
+    };
+    const gt = document.createElement('script');
+    gt.src = 'https://translate.google.com/translate_a/element.js?cb=tmsTranslateInit';
+    gt.async = true;
+    document.body.appendChild(gt);
   }
 
   // ---------- install (PWA) ----------

@@ -84,7 +84,7 @@ if (preg_match('#^/link/([A-Za-z0-9_-]{10,64})$#', $path, $m)) {
 if ($path === '/sitemap.xml') {
     header('Content-Type: application/xml; charset=utf-8');
     $base = rtrim((string) Config::get('site_url'), '/');
-    $urls = array_merge(['/', '/how-it-works', '/blog', '/about', '/support', '/privacy', '/terms'], array_map(fn ($s) => '/blog/' . $s, array_keys(View::posts())));
+    $urls = array_merge(['/', '/blog'], array_map(fn ($s) => '/' . $s, array_keys(Tms\Content::PAGES)), array_map(fn ($s) => '/blog/' . $s, array_keys(View::posts())));
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach ($urls as $u) {
         echo '<url><loc>' . Http::e($base . ($u === '/' ? '/' : $u)) . '</loc></url>';

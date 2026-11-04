@@ -1,62 +1,72 @@
 <?php
 use Tms\View;
 
-$faq = [
-    ['What is temp mail?', 'Temp mail is a free, disposable email address you can use instead of your real one. Use it to sign up, get a verification code or download something, then let it expire. Your real inbox stays free of spam.'],
-    ['How long do mailboxes and emails last?', 'A guest mailbox works for 5 days. If you save a recovery code or link a second device, your mailboxes last 30 days. Each email is deleted automatically 3 hours after it arrives.'],
-    ['Can I use temp mail for verification codes?', 'Yes. Codes and confirmation links usually arrive within seconds. We detect the code and show a one-tap copy button next to the email.'],
-    ['Is temp mail safe and legal?', 'Yes, using a disposable address to protect your privacy is legal. Do not use it for accounts you need to keep (banking, work, government) or for anything that breaks the law or another site\'s rules.'],
-    ['Why does a website say my email is not allowed?', 'Some sites block known disposable domains. Try again with a new address, or pick a different domain if more than one is offered.'],
-    ['Can I send email from a temporary address?', 'Not right now. Temp Mail Site is receive-only, which keeps it fast and free and stops spammers from abusing it.'],
-    ['Can I create a custom email address?', 'Yes. Press "Change", type the name you want and pick a domain. If the name is free, it is yours until it expires.'],
-    ['How is this different from 10 Minute Mail?', 'Your address does not vanish after 10 minutes. Mailboxes last days, you can keep several at once, open them on other devices and come back later with a recovery code.'],
-    ['Is my data secure?', 'We never ask for your name, phone or real email. Email HTML is shown in a locked-down sandbox with scripts blocked, and everything is deleted on a timer.'],
-    ['How do I delete my account?', 'Open Account and choose Delete account, or go to the Delete account page and enter your recovery code. Everything is removed at once.'],
-    ['Can I receive attachments?', 'Yes. Attachments up to about 10 MB can be downloaded from the email view until the email expires.'],
-    ['Is there a mobile app?', 'You can install Temp Mail Site on your phone straight from the browser: open the site and choose "Add to Home screen" or use the Install button below. It works like an app.'],
+/** @var array $cs */
+$ticks = array_filter(array_map('trim', explode(',', $cs['hero_ticks'])));
+$check = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4.5 12.5 4.5 4.5L19.5 6.5"/></svg>';
+$apps = [
+    ['Discord', 'discord.com', '/blog/temp-mail-for-discord'],
+    ['Instagram', 'instagram.com', '/blog/temp-mail-for-instagram'],
+    ['ChatGPT', 'chatgpt.com', '/blog/temp-mail-for-chatgpt'],
+    ['Steam', 'steampowered.com', '/blog/temp-mail-for-steam'],
 ];
 ?>
 <section class="hero" id="inbox">
   <div class="wrap">
-    <p class="badge">Instant inbox &middot; works on phone and desktop</p>
-    <h1>Free Temporary Email Address</h1>
-    <ul class="ticks"><li>No sign-up</li><li>Auto-expires</li><li>Free forever</li></ul>
+    <p class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4 13.5h7L10 22l10-12h-7l.5-8Z"/></svg><span><?= $e($cs['hero_badge']) ?></span></p>
+    <h1><?= $e($cs['hero_title']) ?></h1>
+    <?php if ($ticks): ?><ul class="ticks"><?php foreach ($ticks as $tick): ?><li><?= $check ?><?= $e($tick) ?></li><?php endforeach; ?></ul><?php endif; ?>
 
     <div class="app" id="app" data-poll="5">
       <div class="addr-card">
         <div class="addr-head">
           <span class="dot live" aria-hidden="true"></span>
-          <span class="muted small" id="addr-expiry">Getting your address&hellip;</span>
-          <select id="box-select" class="box-select" aria-label="Your addresses" hidden></select>
+          <span class="addr-expiry" id="addr-expiry">Getting your address&hellip;</span>
+          <span class="live-pill" id="live-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live Inbox</span>
         </div>
+        <select id="box-select" class="box-select" aria-label="Your addresses" hidden translate="no"></select>
         <div class="addr-row">
-          <input id="addr" class="addr" readonly value="" aria-label="Your temporary email address" placeholder="loading&hellip;">
-          <button class="btn btn-primary" id="btn-copy" type="button">Copy</button>
+          <label class="addr-field">
+            <svg class="addr-icon" viewBox="0 0 32 24" aria-hidden="true"><rect width="32" height="24" rx="5" fill="#2f80ed"/><path d="M6.5 7 16 14l9.5-7M6.5 18l6.5-5.5M25.5 18 19 12.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <input id="addr" class="addr" readonly value="" aria-label="Your temporary email address" placeholder="loading&hellip;" translate="no">
+          </label>
+          <button class="btn btn-primary btn-copy" id="btn-copy" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg>Copy</button>
         </div>
         <div class="addr-actions">
-          <button class="btn btn-ghost" id="btn-new" type="button">New address</button>
-          <button class="btn btn-ghost" id="btn-change" type="button">Change</button>
-          <button class="btn btn-ghost" id="btn-refresh" type="button">Refresh</button>
-          <button class="btn btn-ghost danger" id="btn-delete" type="button">Delete</button>
+          <button class="btn btn-ghost" id="btn-new" type="button"><svg class="i-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M3.5 12h17"/></svg>New Address</button>
+          <button class="btn btn-ghost" id="btn-change" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 3.5v5h-5M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20.5v-5h5"/></svg>Change</button>
+          <button class="btn btn-ghost" id="btn-refresh" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5M20 3.5v5h-5"/></svg>Refresh</button>
+          <button class="btn btn-danger" id="btn-delete" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l.8 13a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-13M10 10.5v6.5M14 10.5v6.5"/></svg>Delete</button>
         </div>
         <form id="custom-form" class="custom-form" hidden>
-          <input name="name" placeholder="your-name" pattern="[A-Za-z0-9._-]{3,30}" required autocomplete="off">
+          <input name="name" placeholder="your-name" pattern="[A-Za-z0-9._\-]{3,30}" required autocomplete="off" translate="no">
           <span>@</span>
-          <select name="domain" id="domain-select"></select>
+          <select name="domain" id="domain-select" translate="no"></select>
           <button class="btn btn-primary" type="submit">Create</button>
         </form>
       </div>
 
       <div class="inbox">
         <div class="inbox-head">
-          <h2>Inbox</h2>
-          <span class="muted small" id="inbox-status">Waiting for email&hellip;</span>
+          <div class="inbox-tab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="m3 6.5 9 6.5 9-6.5"/></svg><span>Inbox (<span id="inbox-count">0</span>)</span></div>
+          <span class="inbox-status" id="inbox-status">Waiting for email&hellip;</span>
+          <label class="switch"><span>Auto Refresh</span><input type="checkbox" id="auto-refresh" checked><span class="slider" aria-hidden="true"></span></label>
         </div>
-        <ul class="mail-list" id="mail-list" aria-live="polite"></ul>
-        <div class="empty" id="empty">
-          <div class="spinner" aria-hidden="true"></div>
-          <p>Your inbox is empty</p>
-          <p class="muted small">New email shows up here automatically within seconds.</p>
+        <div class="inbox-body">
+          <ul class="mail-list" id="mail-list" aria-live="polite"></ul>
+          <div class="empty" id="empty">
+            <svg class="empty-art" viewBox="0 0 120 90" aria-hidden="true">
+              <ellipse cx="62" cy="52" rx="54" ry="36" fill="#eef3ff"/>
+              <path d="M22 14l8 6M30 6l3 10M14 24l9 2" stroke="#5b3df5" stroke-width="3" stroke-linecap="round"/>
+              <path d="M36 44 62 24l26 20v30a4 4 0 0 1-4 4H40a4 4 0 0 1-4-4Z" fill="#4a8ff7"/>
+              <rect x="44" y="20" width="36" height="34" rx="3" fill="#fff"/>
+              <path d="M50 30h24M50 37h24M50 44h16" stroke="#c9d6ef" stroke-width="3" stroke-linecap="round"/>
+              <path d="M36 46l26 18 26-18v28a4 4 0 0 1-4 4H40a4 4 0 0 1-4-4Z" fill="#69a5fb"/>
+              <path d="M36 78l22-17M88 78 66 61" stroke="#4a8ff7" stroke-width="2.5"/>
+            </svg>
+            <p class="empty-title">Your inbox is empty</p>
+            <p class="empty-sub">New email shows up here automatically within seconds</p>
+          </div>
         </div>
       </div>
 
@@ -64,110 +74,37 @@ $faq = [
         <header class="reader-head">
           <button class="btn btn-ghost btn-sm" id="btn-back" type="button">&larr; Back</button>
           <div class="reader-actions">
-            <button class="btn btn-ghost btn-sm danger" id="btn-del-msg" type="button">Delete</button>
+            <button class="btn btn-danger btn-sm" id="btn-del-msg" type="button">Delete</button>
           </div>
         </header>
         <h3 id="r-subject"></h3>
-        <div class="reader-from"><img id="r-icon" class="favicon" alt="" width="32" height="32"><div><strong id="r-from"></strong><div class="muted small" id="r-addr"></div></div><span class="muted small" id="r-time"></span></div>
+        <div class="reader-from"><img id="r-icon" class="favicon" alt="" width="32" height="32"><div><strong id="r-from"></strong><div class="muted small" id="r-addr" translate="no"></div></div><span class="muted small" id="r-time"></span></div>
         <p class="muted small delivery" id="r-delivery" hidden></p>
-        <div class="otp-bar" id="r-otp" hidden><span>Code</span><strong id="r-otp-code"></strong><button class="btn btn-primary btn-sm" type="button" id="btn-copy-otp">Copy code</button></div>
+        <div class="otp-bar" id="r-otp" hidden><span>Code</span><strong id="r-otp-code" translate="no"></strong><button class="btn btn-primary btn-sm" type="button" id="btn-copy-otp">Copy code</button></div>
         <div class="otp-bar" id="r-link" hidden><span>Link</span><a id="r-link-a" target="_blank" rel="noopener noreferrer nofollow">Open confirmation link</a></div>
         <div class="tabs" id="r-tabs" hidden><button type="button" data-view="html" class="on">HTML</button><button type="button" data-view="text">Text</button></div>
         <iframe id="r-html" class="mail-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" title="Email content"></iframe>
-        <pre id="r-text" class="mail-text" hidden></pre>
+        <pre id="r-text" class="mail-text" hidden translate="no"></pre>
         <ul class="attachments" id="r-atts"></ul>
       </article>
+
+      <div class="use-row">
+        <span>Use it anywhere you sign-up:</span>
+        <?php foreach ($apps as [$name, $domain, $href]): ?>
+          <a class="app-chip" href="<?= $href ?>"><img src="https://www.google.com/s2/favicons?sz=64&amp;domain=<?= $domain ?>" alt="" width="20" height="20" loading="lazy" referrerpolicy="no-referrer"><?= $name ?></a>
+        <?php endforeach; ?>
+      </div>
     </div>
-    <p class="muted small center">Use it anywhere you sign up: <a href="/blog/temp-mail-for-discord">Discord</a>, <a href="/blog/temp-mail-for-instagram">Instagram</a>, <a href="/blog/temp-mail-for-chatgpt">ChatGPT</a>, <a href="/blog/temp-mail-for-steam">Steam</a></p>
+  </div>
+</section>
+
+<section class="perks" id="features">
+  <div class="wrap perks-row">
+    <div class="perk"><span class="perk-icon pi-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.5 5.6v5.8c0 4.7 3.2 8.6 7.5 9.8 4.3-1.2 7.5-5.1 7.5-9.8V5.6L12 2.8Z"/><path d="m8.6 12 2.4 2.4 4.4-4.6"/></svg></span><h3>Keep Your Privacy</h3><p>Stay anonymous and protect your real email.</p></div>
+    <div class="perk"><span class="perk-icon pi-violet"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M13.5 2 4 13.5h7L10 22l10-12h-7l.5-8Z"/></svg></span><h3>Instant Access</h3><p>Get a temporary email address in one click.</p></div>
+    <div class="perk"><span class="perk-icon pi-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-2.6-3.6-4-5.6-4a4 4 0 0 0 0 8c2 0 3.6-1.4 5.6-4Zm0 0c2 2.6 3.6 4 5.6 4a4 4 0 0 0 0-8c-2 0-3.6 1.4-5.6 4Z"/></svg></span><h3>Unlimited Emails</h3><p>Generate as many emails as you need.</p></div>
+    <div class="perk"><span class="perk-icon pi-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l.8 13a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-13M10 10.5v6.5M14 10.5v6.5"/></svg></span><h3>Auto Delete</h3><p>Emails are automatically deleted after expiration.</p></div>
   </div>
 </section>
 
 <div class="wrap"><?= View::ad($adsense, $adSlot) ?></div>
-
-<section class="section" id="features">
-  <div class="wrap">
-    <h2 class="section-title">Everything a temporary inbox should be</h2>
-    <div class="grid3">
-      <div class="card"><div class="card-icon">&#9889;</div><h3>Instant address, no sign-up</h3><p>A fresh address is ready the moment the page opens. Copy it with one tap, or make a new one any time.</p></div>
-      <div class="card"><div class="card-icon">&#128229;</div><h3>Real-time inbox</h3><p>Email appears within seconds without reloading. Verification codes get a one-tap copy button.</p></div>
-      <div class="card"><div class="card-icon">&#128274;</div><h3>Private by design</h3><p>No personal details needed. Email HTML runs in a sandbox with scripts blocked, and mail is deleted after 3 hours.</p></div>
-      <div class="card"><div class="card-icon">&#9999;&#65039;</div><h3>Custom addresses</h3><p>Pick your own name on any available domain, or keep several addresses side by side.</p></div>
-      <div class="card"><div class="card-icon">&#128241;</div><h3>Synced across devices</h3><p>Scan a QR code to open the same inbox on your phone, or restore it later with a recovery code.</p></div>
-      <div class="card"><div class="card-icon">&#128206;</div><h3>Attachments</h3><p>Receive files and images and download them safely from the email view.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section alt" id="premium">
-  <div class="wrap">
-    <h2 class="section-title">Pro is coming</h2>
-    <p class="center muted">Everything above is free. Pro will add more for people who use temp mail every day.</p>
-    <div class="grid3">
-      <div class="card"><h3>Longer storage</h3><p>Keep email for 30 days instead of 3 hours, and mailboxes for up to 6 months.</p></div>
-      <div class="card"><h3>Email forwarding</h3><p>Forward any mailbox to your real inbox, with an on/off switch per address.</p></div>
-      <div class="card"><h3>Your own domain</h3><p>Add one MX record and receive mail on your own domain.</p></div>
-      <div class="card"><h3>Unlimited mailboxes</h3><p>No daily limit on new addresses.</p></div>
-      <div class="card"><h3>No ads</h3><p>A clean inbox with nothing else on the page.</p></div>
-      <div class="card"><h3>API for AI tools</h3><p>Let your scripts and AI agents create inboxes and read codes.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="how">
-  <div class="wrap">
-    <h2 class="section-title">Three steps. No sign-up.</h2>
-    <ol class="steps">
-      <li><h3>Copy your address</h3><p>A random address is made for you when the page loads. Tap Copy.</p></li>
-      <li><h3>Use it anywhere</h3><p>Paste it into any sign-up or verification form.</p></li>
-      <li><h3>Read it here, then let it expire</h3><p>Codes and links show up in seconds. Guest mailboxes expire after 5 days (30 with a recovery code).</p></li>
-    </ol>
-    <p class="center"><a class="btn" href="/how-it-works">Read the full guide</a></p>
-  </div>
-</section>
-
-<section class="section alt" id="apps">
-  <div class="wrap">
-    <h2 class="section-title">Your inbox, everywhere</h2>
-    <div class="grid2">
-      <div class="card"><h3>Install on your phone</h3><p>Temp Mail Site installs straight from the browser on Android and iPhone. No app store needed.</p><button class="btn btn-primary" id="btn-install" type="button">Install app</button><p class="muted small" id="install-hint"></p></div>
-      <div class="card"><h3>Link a device with a QR code</h3><p>Open Account, choose "Link another device" and scan the code with your phone. Both devices see the same inbox.</p><button class="btn" type="button" data-open="account-dialog">Link a device</button></div>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="guides">
-  <div class="wrap">
-    <h2 class="section-title">Guides &amp; tips</h2>
-    <div class="grid3">
-      <?php foreach (array_slice(View::posts(), 0, 6, true) as $slug => $post): ?>
-        <a class="card card-link" href="/blog/<?= $e($slug) ?>"><h3><?= $e($post['title']) ?></h3><p><?= $e($post['description']) ?></p></a>
-      <?php endforeach; ?>
-    </div>
-    <p class="center"><a class="btn" href="/blog">All guides</a></p>
-  </div>
-</section>
-
-<div class="wrap"><?= View::ad($adsense, $adSlot) ?></div>
-
-<section class="section alt" id="faq">
-  <div class="wrap narrow">
-    <h2 class="section-title">Frequently asked questions</h2>
-    <?php foreach ($faq as [$q, $a]): ?>
-      <details class="faq"><summary><?= $e($q) ?></summary><p><?= $e($a) ?></p></details>
-    <?php endforeach; ?>
-    <p class="center muted">Still have questions? <a href="/support">Contact support</a></p>
-  </div>
-</section>
-
-<section class="section cta">
-  <div class="wrap center">
-    <h2>Get a free temporary email in one click</h2>
-    <a class="btn btn-primary btn-lg" href="#inbox">Get my address</a>
-  </div>
-</section>
-
-<script type="application/ld+json"><?= json_encode([
-    '@context' => 'https://schema.org',
-    '@type' => 'FAQPage',
-    'mainEntity' => array_map(fn ($f) => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]], $faq),
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?></script>

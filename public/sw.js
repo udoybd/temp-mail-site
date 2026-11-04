@@ -1,6 +1,6 @@
 // Caches the page shell so the installed app opens fast; the inbox itself always comes from the network.
-const CACHE = 'tms-v4';
-const SHELL = ['/', '/assets/app.css?v=4', '/assets/app.js?v=4', '/assets/icon.svg'];
+const CACHE = 'tms-v6';
+const SHELL = ['/', '/assets/app.css?v=6', '/assets/app.js?v=6', '/assets/icon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

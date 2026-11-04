@@ -14,13 +14,13 @@ final class Admin
 {
     private const COOKIE = 'tms_admin';
     private const SESSION_TTL = 7 * 86400;
-    private const TABS = ['dashboard', 'domains', 'mail', 'logs'];
+    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'domains', 'mail', 'logs'];
 
     public static function handle(string $method, string $path): void
     {
         header('X-Robots-Tag: noindex, nofollow');
         header('Cache-Control: private, no-store');
-        header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'");
+        header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'");
 
         if ($path !== '/admin') {
             header('Location: /admin');
@@ -63,12 +63,27 @@ final class Admin
                 self::page('login', ['error' => 'Your session expired. Log in again.']);
                 return;
             }
-            [$tab, $flash, $error] = self::act((string) ($_POST['action'] ?? ''));
+            if (($_POST['action'] ?? '') === 'upload-image') {
+                try {
+                    Http::json(['url' => Content::saveImage($_FILES['image'] ?? [])]);
+                } catch (UserError $e) {
+                    Http::json(['error' => $e->getMessage()], 400);
+                }
+                return;
+            }
+            try {
+                $result = self::act((string) ($_POST['action'] ?? ''));
+            } catch (UserError $e) {
+                $result = [(string) ($_POST['tab'] ?? 'dashboard'), null, $e->getMessage()];
+            }
+            [$tab, $flash, $error] = $result;
+            $extra = $result[3] ?? [];
             if ($error === null) {
-                self::redirect($tab, $flash);
+                self::redirect($tab, $flash, $extra);
                 return;
             }
             $_GET['tab'] = $tab;
+            $_GET += $extra;
         }
 
         $tab = in_array($_GET['tab'] ?? '', self::TABS, true) ? $_GET['tab'] : 'dashboard';
@@ -184,9 +199,9 @@ final class Admin
         return hash_hmac('sha256', 'csrf|' . ($_COOKIE[self::COOKIE] ?? ''), (string) Config::get('app_key'));
     }
 
-    private static function redirect(string $tab, ?string $flash = null): void
+    private static function redirect(string $tab, ?string $flash = null, array $extra = []): void
     {
-        $query = ['tab' => $tab];
+        $query = ['tab' => $tab] + $extra;
         if ($flash !== null) {
             $query['ok'] = $flash;
         }
@@ -196,10 +211,14 @@ final class Admin
 
     // ---- actions ----------------------------------------------------------
 
-    /** @return array{0: string, 1: ?string, 2: ?string} tab, success message, error */
+    /** @return array{0: string, 1: ?string, 2: ?string, 3?: array} tab, success message, error, extra query */
     private static function act(string $action): array
     {
         $domain = strtolower(trim((string) ($_POST['domain'] ?? '')));
+        $content = self::actContent($action);
+        if ($content !== null) {
+            return $content;
+        }
         switch ($action) {
             case 'logout':
                 setcookie(self::COOKIE, '', ['expires' => 1, 'path' => '/admin', 'secure' => Http::isHttps(), 'httponly' => true, 'samesite' => 'Strict']);
@@ -270,6 +289,115 @@ final class Admin
         return ['dashboard', null, 'Unknown action.'];
     }
 
+    /** Blog, pages, FAQ, messages and settings. Returns null for actions handled elsewhere. */
+    private static function actContent(string $action): ?array
+    {
+        $now = time();
+        $str = fn (string $k, int $max = 100000) => mb_substr(trim((string) ($_POST[$k] ?? '')), 0, $max);
+        switch ($action) {
+            case 'save-post':
+                $id = (int) ($_POST['id'] ?? 0);
+                $title = $str('title', 200);
+                if ($title === '') {
+                    return ['blog', null, 'Give the post a title.', ['edit' => $id ?: 'new']];
+                }
+                $slug = Content::slugify($str('slug', 120) ?: $title);
+                $clash = Db::one('SELECT id FROM posts WHERE slug = ? AND id != ?', [$slug, $id]);
+                if ($clash) {
+                    return ['blog', null, 'Another post already uses the link /blog/' . $slug . '. Change the link (slug).', ['edit' => $id ?: 'new']];
+                }
+                $status = ($_POST['status'] ?? '') === 'published' ? 'published' : 'draft';
+                $tz = new \DateTimeZone((string) (Config::get('timezone') ?: 'UTC'));
+                $date = $str('date', 40);
+                try {
+                    $at = $date !== '' ? (new \DateTimeImmutable($date, $tz))->getTimestamp() : $now;
+                } catch (\Exception $e) {
+                    $at = $now;
+                }
+                $cover = $str('cover', 500);
+                if (!empty($_POST['remove_cover'])) {
+                    $cover = '';
+                }
+                if (($_FILES['cover_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $cover = Content::saveImage($_FILES['cover_file']);
+                }
+                $values = [$slug, $title, $str('description', 300), (string) ($_POST['body'] ?? ''), $cover, $status, $at, $now];
+                if ($id > 0 && Db::one('SELECT 1 FROM posts WHERE id = ?', [$id])) {
+                    Db::run('UPDATE posts SET slug = ?, title = ?, description = ?, body = ?, cover = ?, status = ?, published_at = ?, updated_at = ? WHERE id = ?', [...$values, $id]);
+                } else {
+                    $id = Db::insert('INSERT INTO posts (slug, title, description, body, cover, status, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', $values);
+                }
+                Log::write('admin', 'saved post ' . $slug . ' (' . $status . ')');
+                $msg = $status === 'published' ? 'Post saved and published.' : 'Post saved as a draft (not visible on the site).';
+                return ['blog', $msg, null, ['edit' => $id]];
+
+            case 'delete-post':
+                $row = Db::one('SELECT slug FROM posts WHERE id = ?', [(int) ($_POST['id'] ?? 0)]);
+                if ($row) {
+                    Db::run('DELETE FROM posts WHERE id = ?', [(int) $_POST['id']]);
+                    Log::write('admin', 'deleted post ' . $row['slug']);
+                }
+                return ['blog', 'Post deleted.', null];
+
+            case 'save-page':
+                $slug = (string) ($_POST['slug'] ?? '');
+                if (!isset(Content::PAGES[$slug])) {
+                    return ['pages', null, 'Page not found.'];
+                }
+                $title = $str('title', 200) ?: Content::PAGES[$slug][0];
+                Db::run('INSERT OR REPLACE INTO pages (slug, title, description, body, updated_at) VALUES (?, ?, ?, ?, ?)',
+                    [$slug, $title, $str('description', 300), (string) ($_POST['body'] ?? ''), $now]);
+                Log::write('admin', 'saved page ' . $slug);
+                return ['pages', 'Page saved. It is live now.', null, ['edit' => $slug]];
+
+            case 'reset-page':
+                $slug = (string) ($_POST['slug'] ?? '');
+                Db::run('DELETE FROM pages WHERE slug = ?', [$slug]);
+                Log::write('admin', 'reset page ' . $slug);
+                return ['pages', 'Page put back to the original text.', null, ['edit' => $slug]];
+
+            case 'add-faq':
+            case 'save-faq':
+                $q = $str('question', 500);
+                $a = $str('answer', 5000);
+                if ($q === '' || $a === '') {
+                    return ['faq', null, 'Write both the question and the answer.'];
+                }
+                $pos = $_POST['position'] ?? '';
+                if ($action === 'add-faq') {
+                    $pos = $pos === '' ? (int) Db::one('SELECT COALESCE(MAX(position), -1) + 1 AS p FROM faqs')['p'] : (int) $pos;
+                    Db::insert('INSERT INTO faqs (question, answer, position) VALUES (?, ?, ?)', [$q, $a, $pos]);
+                    return ['faq', 'Question added.', null];
+                }
+                Db::run('UPDATE faqs SET question = ?, answer = ?, position = ? WHERE id = ?', [$q, $a, (int) $pos, (int) ($_POST['id'] ?? 0)]);
+                return ['faq', 'Question saved.', null];
+
+            case 'delete-faq':
+                Db::run('DELETE FROM faqs WHERE id = ?', [(int) ($_POST['id'] ?? 0)]);
+                return ['faq', 'Question deleted.', null];
+
+            case 'delete-message':
+                Db::run('DELETE FROM contact_messages WHERE id = ?', [(int) ($_POST['id'] ?? 0)]);
+                return ['messages', 'Message deleted.', null];
+
+            case 'read-messages':
+                Db::run('UPDATE contact_messages SET seen = 1');
+                return ['messages', 'All messages marked as read.', null];
+
+            case 'save-settings':
+                foreach (array_keys(Content::SETTINGS) as $key) {
+                    $value = $str($key, 1000);
+                    if (str_starts_with($key, 'social_') && $value !== '' && !preg_match('#^https?://#i', $value)) {
+                        return ['settings', null, 'Links must start with https:// (check ' . Content::SETTINGS[$key][0] . ').'];
+                    }
+                    Db::setSetting('content_' . $key, $value);
+                }
+                Log::write('admin', 'saved site settings');
+                return ['settings', 'Settings saved.', null];
+        }
+        return null;
+    }
+
     // ---- data -------------------------------------------------------------
 
     private static function data(string $tab): array
@@ -301,6 +429,45 @@ final class Admin
                 'cron' => $cron !== null ? (int) $cron : null,
                 'disk' => self::storageSize(),
             ];
+        }
+        if ($tab === 'blog') {
+            $edit = (string) ($_GET['edit'] ?? '');
+            $post = null;
+            if ($edit === 'new') {
+                $post = ['id' => 0, 'slug' => '', 'title' => '', 'description' => '', 'body' => '', 'cover' => '', 'status' => 'draft', 'published_at' => $now];
+            } elseif ($edit !== '') {
+                $post = Db::one('SELECT * FROM posts WHERE id = ?', [(int) $edit]);
+            }
+            if ($post !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Keep what was typed when saving failed.
+                foreach (['title', 'slug', 'description', 'body', 'cover', 'status'] as $k) {
+                    $post[$k] = (string) ($_POST[$k] ?? $post[$k]);
+                }
+            }
+            return [
+                'post' => $post,
+                'posts' => $post === null ? Db::all('SELECT id, slug, title, status, published_at, updated_at FROM posts ORDER BY published_at DESC') : [],
+            ];
+        }
+        if ($tab === 'pages') {
+            $edit = (string) ($_GET['edit'] ?? '');
+            $page = isset(Content::PAGES[$edit]) ? Content::page($edit) + ['slug' => $edit] : null;
+            if ($page !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                foreach (['title', 'description', 'body'] as $k) {
+                    $page[$k] = (string) ($_POST[$k] ?? $page[$k]);
+                }
+            }
+            $custom = array_column(Db::all('SELECT slug, updated_at FROM pages'), 'updated_at', 'slug');
+            return ['page' => $page, 'custom' => $custom];
+        }
+        if ($tab === 'faq') {
+            return ['faqs' => Content::faqs()];
+        }
+        if ($tab === 'messages') {
+            return ['messages' => Db::all('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 200')];
+        }
+        if ($tab === 'settings') {
+            return ['settings' => Content::settings()];
         }
         if ($tab === 'domains') {
             $domains = Db::all('SELECT * FROM domains ORDER BY position, added_at');
@@ -398,6 +565,7 @@ final class Admin
         $vars['site'] = (string) Config::get('site_name');
         $vars['csrf'] = in_array($tab, self::TABS, true) ? self::csrf() : '';
         $vars['tz'] = new \DateTimeZone((string) (Config::get('timezone') ?: 'UTC'));
+        $vars['unread'] = in_array($tab, self::TABS, true) ? (int) Db::one('SELECT COUNT(*) AS n FROM contact_messages WHERE seen = 0')['n'] : 0;
         extract($vars, EXTR_SKIP);
         $e = [Http::class, 'e'];
         header('Content-Type: text/html; charset=utf-8');

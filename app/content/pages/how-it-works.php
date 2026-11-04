@@ -1,5 +1,3 @@
-<section class="page"><div class="wrap narrow">
-<h1>How <?= $e($site) ?> works</h1>
 <p>A temporary email is a real address that receives mail for a short time and then disappears. You get one the second you open the site, with no form to fill in.</p>
 <h2>1. Get an address</h2>
 <p>When the page loads we create a random address such as <code>quickotter482@<?= $e(Tms\Config::get('domains')[0]) ?></code>. Press <strong>Copy</strong> to put it on your clipboard. Want a different one? Press <strong>New address</strong>, or <strong>Change</strong> to pick your own name.</p>
@@ -19,4 +17,3 @@
 <h2>What it is not for</h2>
 <p>Do not use a temporary address for accounts you need to keep, such as banking, work or government services. Anyone who guesses an address cannot read your inbox, but the address itself expires, so you could lose access to that account.</p>
 <p><a class="btn btn-primary" href="/#inbox">Get my address</a></p>
-</div></section>

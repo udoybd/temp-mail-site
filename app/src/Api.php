@@ -127,6 +127,32 @@ final class Api
             return;
         }
 
+        if ($method === 'POST' && $path === '/api/contact') {
+            if (trim((string) ($body['website'] ?? '')) !== '') {
+                Http::json(['ok' => true]); // honeypot field filled in: a bot
+                return;
+            }
+            $name = trim((string) ($body['name'] ?? ''));
+            $email = trim((string) ($body['email'] ?? ''));
+            $subject = trim((string) ($body['subject'] ?? ''));
+            $message = trim((string) ($body['message'] ?? ''));
+            if ($name === '' || $message === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new UserError('Please fill in your name, a valid email and a message.');
+            }
+            if (mb_strlen($message) > 5000 || mb_strlen($name) > 100 || mb_strlen($subject) > 200 || strlen($email) > 200) {
+                throw new UserError('That message is too long.');
+            }
+            if (!RateLimit::hit('contact:' . Http::ip(), 5, 3600)) {
+                throw new UserError('Too many messages. Please try again in an hour.', 429);
+            }
+            Db::run(
+                'INSERT INTO contact_messages (name, email, subject, body, ip, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+                [$name, $email, $subject, $message, Http::ip(), time()]
+            );
+            Http::json(['ok' => true]);
+            return;
+        }
+
         throw new UserError('Not found.', 404);
     }
 

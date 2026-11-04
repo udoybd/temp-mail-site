@@ -11,7 +11,9 @@ $size = function (int $bytes): string {
     }
     return '';
 };
-$labels = ['dashboard' => 'Dashboard', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
+$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
+$hidden = fn (string $k, $v) => '<input type="hidden" name="' . $e($k) . '" value="' . $e((string) $v) . '">';
+$logoSvg = '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><rect width="40" height="32" rx="7" fill="#2f80ed"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 $form = fn (string $action, string $label, string $domain = '', string $class = 'btn btn-sm') =>
     '<form method="post" class="inline"><input type="hidden" name="csrf" value="' . $e($csrf) . '"><input type="hidden" name="action" value="' . $e($action) . '">'
     . ($domain !== '' ? '<input type="hidden" name="domain" value="' . $e($domain) . '">' : '')
@@ -24,56 +26,16 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
 <meta name="robots" content="noindex, nofollow">
 <title>Admin | <?= $e($site) ?></title>
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/app.css?v=5">
-<style>
-.admin { max-width: 1080px; margin: 0 auto; padding: 16px; }
-.admin h1 { font-size: 22px; margin: 0; }
-.admin h2 { font-size: 18px; margin: 28px 0 10px; }
-.a-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.a-tabs { display: flex; gap: 6px; margin: 14px 0 6px; overflow-x: auto; }
-.a-tabs a { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); text-decoration: none; white-space: nowrap; }
-.a-tabs a.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
-.tile .k { color: var(--muted); font-size: 13px; }
-.tile .v { font-size: 26px; font-weight: 700; line-height: 1.2; }
-.tile .s { color: var(--muted); font-size: 12px; }
-.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--muted); font-weight: 600; background: var(--bg2); white-space: nowrap; }
-tr:last-child td { border-bottom: 0; }
-td.num, th.num { text-align: right; }
-.bars { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-.bars .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 2px; min-width: 0; }
-.bars .b { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
-.bars .b.mb { background: var(--accent); }
-.bars .b.em { background: var(--accent2); }
-.bars .d { font-size: 10px; color: var(--muted); }
-.legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 6px; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
-.inline { display: inline; }
-.msg { padding: 10px 14px; border-radius: 10px; margin: 10px 0; }
-.msg.ok { background: rgba(34, 211, 166, .12); border: 1px solid var(--accent2); }
-.msg.err { background: rgba(255, 92, 122, .12); border: 1px solid var(--danger); }
-.pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); }
-.pill.on { color: var(--accent2); border-color: var(--accent2); }
-.pill.off { color: var(--danger); border-color: var(--danger); }
-.box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
-.box input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); color: var(--text); font: inherit; margin: 4px 0 10px; }
-.row-form { display: flex; gap: 8px; flex-wrap: wrap; }
-.row-form input { flex: 1; min-width: 180px; margin: 0; }
-.log { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; word-break: break-all; max-height: 360px; overflow: auto; }
-code { background: var(--bg2); padding: 1px 6px; border-radius: 6px; word-break: break-all; }
-ol li { margin-bottom: 6px; }
-.auth { max-width: 420px; margin: 8vh auto; }
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/app.css?v=6">
+<link rel="stylesheet" href="/assets/admin.css?v=1">
+<script src="/assets/admin.js?v=1" defer></script>
 </head>
 <body>
 <div class="admin">
 <?php if ($tab === 'setup' || $tab === 'login'): ?>
   <div class="auth">
-    <a class="logo" href="/"><span class="logo-mark" aria-hidden="true">@</span><?= $e($site) ?> admin</a>
+    <a class="logo" href="/"><?= $logoSvg ?><span class="logo-text">Temp<span class="logo-accent">Mail</span> Site</span></a>
     <?php if (!empty($error)): ?><div class="msg err"><?= $e($error) ?></div><?php endif; ?>
     <form method="post" class="box" style="margin-top:16px">
       <?php if ($tab === 'setup'): ?>
@@ -94,7 +56,7 @@ ol li { margin-bottom: 6px; }
   </div>
 <?php else: ?>
   <div class="a-top">
-    <a class="logo" href="/"><span class="logo-mark" aria-hidden="true">@</span><?= $e($site) ?></a>
+    <a class="logo" href="/"><?= $logoSvg ?><span class="logo-text">Temp<span class="logo-accent">Mail</span> Site</span></a>
     <span class="pill">admin</span>
     <span style="margin-left:auto"><?= $form('logout', 'Log out', '', 'btn btn-ghost btn-sm') ?></span>
   </div>
@@ -163,6 +125,128 @@ ol li { margin-bottom: 6px; }
       <label>New password<input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
       <label>Type it again<input type="password" name="password2" required minlength="8" autocomplete="new-password"></label>
       <button class="btn">Change password</button>
+    </form>
+
+  <?php elseif ($tab === 'blog'): ?>
+    <?php if ($post === null): ?>
+      <div class="a-bar"><h2>Blog posts</h2><a class="btn btn-primary" href="/admin?tab=blog&amp;edit=new">+ New post</a></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Title</th><th>Status</th><th>Date</th><th>Updated</th><th></th></tr>
+        <?php foreach ($posts as $p): ?>
+          <tr>
+            <td><a href="/admin?tab=blog&amp;edit=<?= (int) $p['id'] ?>"><strong><?= $e($p['title']) ?></strong></a><div class="muted small">/blog/<?= $e($p['slug']) ?></div></td>
+            <td><?php if ($p['status'] !== 'published'): ?><span class="pill off">draft</span><?php elseif ($p['published_at'] > time()): ?><span class="pill">scheduled</span><?php else: ?><span class="pill on">published</span><?php endif; ?></td>
+            <td class="small" style="white-space:nowrap"><?= $t($p['published_at']) ?></td>
+            <td class="small" style="white-space:nowrap"><?= $t($p['updated_at']) ?></td>
+            <td style="white-space:nowrap">
+              <a class="btn btn-sm" href="/admin?tab=blog&amp;edit=<?= (int) $p['id'] ?>">Edit</a>
+              <?php if ($p['status'] === 'published'): ?><a class="btn btn-sm" href="/blog/<?= $e($p['slug']) ?>" target="_blank" rel="noopener">View</a><?php endif; ?>
+              <form method="post" class="inline" data-confirm="Delete this post for good?"><?= $hidden('csrf', $csrf) . $hidden('action', 'delete-post') . $hidden('tab', 'blog') . $hidden('id', $p['id']) ?><button class="btn btn-sm danger">Delete</button></form>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+        <?php if (!$posts): ?><tr><td colspan="5" class="muted">No posts yet. Press "New post".</td></tr><?php endif; ?>
+      </table></div>
+    <?php else: ?>
+      <div class="a-bar"><h2><?= $post['id'] ? 'Edit post' : 'New post' ?></h2><a class="btn btn-sm" href="/admin?tab=blog">&larr; All posts</a>
+        <?php if ($post['id'] && $post['status'] === 'published'): ?><a class="btn btn-sm" href="/blog/<?= $e($post['slug']) ?>" target="_blank" rel="noopener">View on site</a><?php endif; ?></div>
+      <form method="post" enctype="multipart/form-data" class="box editor-form">
+        <?= $hidden('csrf', $csrf) . $hidden('action', 'save-post') . $hidden('tab', 'blog') . $hidden('id', $post['id']) . $hidden('cover', $post['cover']) ?>
+        <label>Title<input name="title" id="f-title" value="<?= $e($post['title']) ?>" required maxlength="200"></label>
+        <label>Link (slug) <span class="muted small">jamaluddin.info/blog/<b id="slug-preview"><?= $e($post['slug']) ?></b></span><input name="slug" id="f-slug" value="<?= $e($post['slug']) ?>" placeholder="made from the title if empty" maxlength="120" data-auto="<?= $post['id'] ? '0' : '1' ?>"></label>
+        <label>Short description <span class="muted small">(shown on the blog list and in Google)</span><input name="description" value="<?= $e($post['description']) ?>" maxlength="300"></label>
+        <div class="grid-2">
+          <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (visible)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
+          <label>Publish date<input type="datetime-local" name="date" value="<?= $e((new DateTimeImmutable('@' . (int) $post['published_at']))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
+        </div>
+        <div class="cover-row">
+          <?php if ($post['cover'] !== ''): ?><img src="<?= $e($post['cover']) ?>" alt="" class="cover-thumb"><label class="check"><input type="checkbox" name="remove_cover" value="1"> Remove cover image</label><?php endif; ?>
+          <label>Cover image <span class="muted small">(JPG/PNG/WebP, optional)</span><input type="file" name="cover_file" accept="image/*"></label>
+        </div>
+        <?php $editorName = 'body'; $editorValue = $post['body']; require __DIR__ . '/admin-editor.php'; ?>
+        <div class="a-bar"><button class="btn btn-primary">Save post</button></div>
+      </form>
+      <?php if ($post['id']): ?>
+        <form method="post" data-confirm="Delete this post for good?"><?= $hidden('csrf', $csrf) . $hidden('action', 'delete-post') . $hidden('tab', 'blog') . $hidden('id', $post['id']) ?><button class="btn btn-sm danger">Delete this post</button></form>
+      <?php endif; ?>
+    <?php endif; ?>
+
+  <?php elseif ($tab === 'pages'): ?>
+    <?php if ($page === null): ?>
+      <h2>Site pages</h2>
+      <p class="muted small">Change the text of any page. "Reset" puts the original text back.</p>
+      <div class="tbl-wrap"><table>
+        <tr><th>Page</th><th>Address</th><th>Status</th><th></th></tr>
+        <?php foreach (Tms\Content::PAGES as $slug => [$ptitle]): ?>
+          <tr>
+            <td><strong><?= $e($ptitle) ?></strong></td>
+            <td class="small"><a href="/<?= $e($slug) ?>" target="_blank" rel="noopener">/<?= $e($slug) ?></a></td>
+            <td class="small"><?= isset($custom[$slug]) ? '<span class="pill on">edited ' . $e($t($custom[$slug])) . '</span>' : '<span class="pill">original</span>' ?></td>
+            <td><a class="btn btn-sm" href="/admin?tab=pages&amp;edit=<?= $e($slug) ?>">Edit</a></td>
+          </tr>
+        <?php endforeach; ?>
+      </table></div>
+      <p class="muted small">Home page title, footer text and social links are under <a href="/admin?tab=settings">Settings</a>. FAQ questions are under <a href="/admin?tab=faq">FAQ</a>.</p>
+    <?php else: ?>
+      <div class="a-bar"><h2>Edit page: /<?= $e($page['slug']) ?></h2><a class="btn btn-sm" href="/admin?tab=pages">&larr; All pages</a><a class="btn btn-sm" href="/<?= $e($page['slug']) ?>" target="_blank" rel="noopener">View on site</a></div>
+      <form method="post" class="box editor-form">
+        <?= $hidden('csrf', $csrf) . $hidden('action', 'save-page') . $hidden('tab', 'pages') . $hidden('slug', $page['slug']) ?>
+        <label>Page title<input name="title" value="<?= $e($page['title']) ?>" required maxlength="200"></label>
+        <label>Short description <span class="muted small">(for Google)</span><input name="description" value="<?= $e($page['description']) ?>" maxlength="300"></label>
+        <?php if ($page['slug'] === 'faq'): ?><p class="muted small">This is the text above the questions. Edit the questions under <a href="/admin?tab=faq">FAQ</a>.</p><?php endif; ?>
+        <?php if ($page['slug'] === 'contact'): ?><p class="muted small">This is the text above the contact form. Messages people send show up under <a href="/admin?tab=messages">Messages</a>.</p><?php endif; ?>
+        <?php $editorName = 'body'; $editorValue = $page['body']; require __DIR__ . '/admin-editor.php'; ?>
+        <div class="a-bar"><button class="btn btn-primary">Save page</button></div>
+      </form>
+      <?php if ($page['custom']): ?>
+        <form method="post" data-confirm="Put the original text back? Your changes to this page will be lost."><?= $hidden('csrf', $csrf) . $hidden('action', 'reset-page') . $hidden('tab', 'pages') . $hidden('slug', $page['slug']) ?><button class="btn btn-sm danger">Reset to original text</button></form>
+      <?php endif; ?>
+    <?php endif; ?>
+
+  <?php elseif ($tab === 'faq'): ?>
+    <h2>Add a question</h2>
+    <form method="post" class="box">
+      <?= $hidden('csrf', $csrf) . $hidden('action', 'add-faq') . $hidden('tab', 'faq') ?>
+      <label>Question<input name="question" required maxlength="500"></label>
+      <label>Answer<textarea name="answer" rows="3" required maxlength="5000"></textarea></label>
+      <button class="btn btn-primary">Add question</button>
+    </form>
+    <h2>Questions on the <a href="/faq" target="_blank" rel="noopener">FAQ page</a> <span class="muted small">(lower order number shows first)</span></h2>
+    <?php foreach ($faqs as $f): ?>
+      <form method="post" class="box faq-edit">
+        <?= $hidden('csrf', $csrf) . $hidden('action', 'save-faq') . $hidden('tab', 'faq') . $hidden('id', $f['id']) ?>
+        <div class="faq-top"><label class="pos">Order<input name="position" type="number" value="<?= (int) $f['position'] ?>"></label><label class="grow">Question<input name="question" value="<?= $e($f['question']) ?>" required maxlength="500"></label></div>
+        <label>Answer<textarea name="answer" rows="3" required maxlength="5000"><?= $e($f['answer']) ?></textarea></label>
+        <button class="btn btn-sm btn-primary">Save</button>
+        <button class="btn btn-sm danger" name="action" value="delete-faq" data-confirm="Delete this question?">Delete</button>
+      </form>
+    <?php endforeach; ?>
+    <?php if (!$faqs): ?><p class="muted">No questions yet.</p><?php endif; ?>
+
+  <?php elseif ($tab === 'messages'): ?>
+    <div class="a-bar"><h2>Messages from the Contact page</h2>
+      <?php if ($unread): ?><?= $form('read-messages', 'Mark all as read') ?><?php endif; ?></div>
+    <?php foreach ($messages as $m): ?>
+      <div class="box msg-card<?= $m['seen'] ? '' : ' unseen' ?>">
+        <div class="a-bar"><strong><?= $e($m['name']) ?></strong> <a href="mailto:<?= $e($m['email']) ?>?subject=<?= rawurlencode('Re: ' . ($m['subject'] ?: 'your message')) ?>"><?= $e($m['email']) ?></a>
+          <span class="muted small" style="margin-left:auto"><?= $t($m['created_at']) ?></span></div>
+        <?php if ($m['subject'] !== ''): ?><div><strong><?= $e($m['subject']) ?></strong></div><?php endif; ?>
+        <div class="msg-body"><?= nl2br($e($m['body'])) ?></div>
+        <div class="a-bar"><a class="btn btn-sm btn-primary" href="mailto:<?= $e($m['email']) ?>?subject=<?= rawurlencode('Re: ' . ($m['subject'] ?: 'your message')) ?>">Reply by email</a>
+          <form method="post" class="inline" data-confirm="Delete this message?"><?= $hidden('csrf', $csrf) . $hidden('action', 'delete-message') . $hidden('tab', 'messages') . $hidden('id', $m['id']) ?><button class="btn btn-sm danger">Delete</button></form></div>
+      </div>
+    <?php endforeach; ?>
+    <?php if (!$messages): ?><p class="muted">No messages yet. When someone uses the <a href="/contact" target="_blank" rel="noopener">Contact page</a>, it shows up here.</p><?php endif; ?>
+
+  <?php elseif ($tab === 'settings'): ?>
+    <h2>Site text and links</h2>
+    <form method="post" class="box">
+      <?= $hidden('csrf', $csrf) . $hidden('action', 'save-settings') . $hidden('tab', 'settings') ?>
+      <?php foreach (Tms\Content::SETTINGS as $key => [$label]): ?>
+        <?php if ($key === 'social_facebook'): ?><h3>Follow Us links <span class="muted small">(leave empty to hide an icon)</span></h3><?php endif; ?>
+        <label><?= $e($label) ?><input name="<?= $e($key) ?>" value="<?= $e($settings[$key]) ?>" maxlength="1000"<?= str_starts_with($key, 'social_') ? ' type="url" placeholder="https://"' : '' ?>></label>
+      <?php endforeach; ?>
+      <button class="btn btn-primary">Save settings</button>
     </form>
 
   <?php elseif ($tab === 'domains'): ?>
