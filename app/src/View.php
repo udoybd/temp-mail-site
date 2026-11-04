@@ -7,14 +7,14 @@ final class View
 {
     /** Fixed pages that are not editable (they hold forms that need code). */
     private const PAGES = [
-        '/delete-account' => ['delete-account', 'Delete your account', 'Delete your Bengal Email account and every mailbox in it.'],
+        '/delete-account' => ['delete-account', 'Delete your account', 'Delete your Bengal.email account and every mailbox in it.'],
     ];
 
     public static function route(string $path): void
     {
         if ($path === '/') {
             self::render('home', [
-                'title' => 'Bengal Email: Free Temporary Email Address Generator',
+                'title' => 'Bengal.email: Free Temporary Email Address Generator',
                 'description' => 'Get a free temporary email address instantly. No sign-up, live inbox, one-tap verification codes, auto-expiring mailboxes.',
                 'home' => true,
             ]);
