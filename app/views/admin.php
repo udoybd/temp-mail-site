@@ -153,7 +153,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <form method="post" enctype="multipart/form-data" class="box editor-form">
         <?= $hidden('csrf', $csrf) . $hidden('action', 'save-post') . $hidden('tab', 'blog') . $hidden('id', $post['id']) . $hidden('cover', $post['cover']) ?>
         <label>Title<input name="title" id="f-title" value="<?= $e($post['title']) ?>" required maxlength="200"></label>
-        <label>Link (slug) <span class="muted small">jamaluddin.info/blog/<b id="slug-preview"><?= $e($post['slug']) ?></b></span><input name="slug" id="f-slug" value="<?= $e($post['slug']) ?>" placeholder="made from the title if empty" maxlength="120" data-auto="<?= $post['id'] ? '0' : '1' ?>"></label>
+        <label>Link (slug) <span class="muted small">bengal.email/blog/<b id="slug-preview"><?= $e($post['slug']) ?></b></span><input name="slug" id="f-slug" value="<?= $e($post['slug']) ?>" placeholder="made from the title if empty" maxlength="120" data-auto="<?= $post['id'] ? '0' : '1' ?>"></label>
         <label>Short description <span class="muted small">(shown on the blog list and in Google)</span><input name="description" value="<?= $e($post['description']) ?>" maxlength="300"></label>
         <div class="grid-2">
           <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (visible)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
