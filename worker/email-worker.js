@@ -1,6 +1,6 @@
 // Cloudflare Email Worker for extra mail domains (free plan).
 // Email Routing: catch-all -> "Send to a Worker" -> this worker.
-// Set two variables on the worker: SITE_URL (https://jamaluddin.info) and INGEST_SECRET
+// Set two variables on the worker: SITE_URL (https://bengal.email) and INGEST_SECRET
 // (copy "ingest_secret" from storage/config.php on the server).
 // The worker does no parsing so it stays within the free plan's 10 ms CPU limit.
 export default {
