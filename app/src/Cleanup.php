@@ -15,6 +15,7 @@ final class Cleanup
             Message::delete((int) $row['id']);
             $done['emails']++;
         }
+        Mailbox::enforceLifetime();
         foreach (Db::all('SELECT id FROM mailboxes WHERE expires_at < ?', [$now]) as $row) {
             Mailbox::delete((int) $row['id'], 'expired');
             $done['mailboxes']++;

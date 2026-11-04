@@ -40,6 +40,15 @@ final class Mailbox
     /** A deleted address can be taken again (by anyone) this long after it was deleted. */
     public const REUSE_AFTER = 86400;
 
+    /** Every address works for exactly this long after it is made (fixed, not read from config.php). */
+    public const LIFETIME = 86400;
+
+    /** Cuts any mailbox that would live longer than LIFETIME, e.g. ones made under the old 5/30-day rule. */
+    public static function enforceLifetime(): void
+    {
+        Db::run('UPDATE mailboxes SET expires_at = created_at + ' . self::LIFETIME . ' WHERE expires_at > created_at + ' . self::LIFETIME);
+    }
+
     /** The account's own live mailbox with this address, if it has one. */
     public static function ownedByAddress(int $accountId, string $address): ?array
     {
@@ -103,8 +112,7 @@ final class Mailbox
             $local = self::randomFree($domain);
         }
 
-        $info = Db::one('SELECT linked FROM accounts WHERE id = ?', [$accountId]);
-        $ttl = (int) Config::get(!empty($info['linked']) ? 'linked_mailbox_ttl' : 'guest_mailbox_ttl');
+        $ttl = self::LIFETIME;
         $now = time();
         $address = $local . '@' . $domain;
         $id = Db::insert(

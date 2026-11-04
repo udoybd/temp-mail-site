@@ -91,6 +91,18 @@ final class Db
             $pdo->prepare("UPDATE posts SET body = REPLACE(body, ?, ?) WHERE slug = 'temp-mail-for-discord'")->execute(['save a recovery code under Account so the mailbox lasts 30 days, or move the account to a permanent email later in Discord settings.', 'remember that a temporary address only lasts 24 hours, so move the account to a permanent email later in Discord settings.']);
             $pdo->exec('PRAGMA user_version = 7');
         }
+        if ($version < 8) {
+            // Addresses deleted before the history existed: list them in /admin too.
+            $pdo->exec('ALTER TABLE mailbox_log ADD COLUMN backfilled INTEGER NOT NULL DEFAULT 0');
+            $pdo->exec(
+                'INSERT INTO mailbox_log (address, created_at, ended_at, end_reason, backfilled)
+                 SELECT r.address, r.released_at, r.released_at, r.reason, 1 FROM released_addresses r
+                 WHERE NOT EXISTS (SELECT 1 FROM mailbox_log l WHERE l.address = r.address AND l.ended_at IS NOT NULL)'
+            );
+            // Strict 24 hours from creation for every live address.
+            $pdo->exec('UPDATE mailboxes SET expires_at = created_at + 86400 WHERE expires_at > created_at + 86400');
+            $pdo->exec('PRAGMA user_version = 8');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */

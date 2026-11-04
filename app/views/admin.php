@@ -357,12 +357,13 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <?php foreach ($boxes as $b): ?>
         <tr>
           <td class="small"><a href="/admin?tab=mail&amp;q=<?= $e(rawurlencode((string) $b['address'])) ?>"><?= $e($b['address']) ?></a></td>
-          <td class="small" style="white-space:nowrap"><?= $t($b['created_at']) ?></td>
+          <td class="small" style="white-space:nowrap"><?= !empty($b['backfilled']) ? '<span class="muted">before history</span>' : $t($b['created_at']) ?></td>
           <td class="small" style="white-space:nowrap">
             <?php if ($b['ended_at'] === null && $b['expires_at'] !== null && (int) $b['expires_at'] > time()): ?>
               <span class="pill on">live</span> until <?= $t($b['expires_at']) ?>
             <?php elseif ($b['ended_at'] !== null): ?>
               <span class="pill off"><?= $e($b['end_reason'] === 'deleted by owner' ? 'deleted' : ($b['end_reason'] === 'expired' ? 'expired' : (string) $b['end_reason'])) ?></span> <?= $t($b['ended_at']) ?>
+              <?php if ((int) $b['ended_at'] + Tms\Mailbox::REUSE_AFTER > time()): ?><div class="muted small">name free again <?= $t((int) $b['ended_at'] + Tms\Mailbox::REUSE_AFTER) ?></div><?php endif; ?>
             <?php else: ?>
               <span class="pill off">expired</span>
             <?php endif; ?>

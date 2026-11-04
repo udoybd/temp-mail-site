@@ -114,8 +114,6 @@ final class Account
         $row = Db::one('SELECT linked FROM accounts WHERE id = ?', [$id]);
         if ($row && !(int) $row['linked']) {
             Db::run('UPDATE accounts SET linked = 1 WHERE id = ?', [$id]);
-            // Mailboxes get the linked lifetime (counted from when each was made) if it is longer.
-            Db::run('UPDATE mailboxes SET expires_at = MAX(expires_at, created_at + CAST(? AS INTEGER)) WHERE account_id = ?', [(int) Config::get('linked_mailbox_ttl'), $id]);
         }
     }
 
