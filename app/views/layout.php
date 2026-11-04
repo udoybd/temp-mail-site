@@ -42,6 +42,7 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <meta name="twitter:card" content="summary_large_image">
 <meta name="apple-mobile-web-app-title" content="<?= $e($site) ?>">
 <meta name="application-name" content="<?= $e($site) ?>">
+<meta name="monetag" content="79fa10b9e39bcd94abc358fb9abe0c4d">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/icon-192.png">
