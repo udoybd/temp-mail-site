@@ -1,6 +1,6 @@
 {
-  "name": "Bengal Email",
-  "short_name": "Bengal Email",
+  "name": "Bengal.email",
+  "short_name": "Bengal.email",
   "description": "Free temporary email address with a live inbox.",
   "start_url": "/",
   "display": "standalone",
