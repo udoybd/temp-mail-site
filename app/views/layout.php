@@ -6,7 +6,7 @@ $v = '7';
 $nav = ['/' => 'Home', '/features' => 'Features', '/faq' => 'FAQ', '/blog' => 'Blog', '/contact' => 'Contact'];
 $isOn = fn (string $href) => $href === '/' ? $path === '/' : ($path === $href || str_starts_with($path, $href . '/'));
 $logo = fn (string $id) => '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><defs><linearGradient id="' . $id . '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b8df6"/><stop offset="1" stop-color="#1f5fe0"/></linearGradient></defs><rect width="40" height="32" rx="7" fill="url(#' . $id . ')"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-$brand = '<span class="logo-text">Temp<span class="logo-accent">Mail</span> Site</span>';
+$brand = '<span class="logo-text">Bengal<span class="logo-accent">Email</span></span>';
 $langs = ['en' => 'English', 'bn' => 'বাংলা', 'hi' => 'हिन्दी', 'ur' => 'اردو', 'ar' => 'العربية', 'es' => 'Español', 'fr' => 'Français', 'de' => 'Deutsch', 'pt' => 'Português', 'ru' => 'Русский', 'tr' => 'Türkçe', 'id' => 'Bahasa Indonesia', 'vi' => 'Tiếng Việt', 'zh-CN' => '中文', 'ja' => '日本語'];
 $langSelect = function (string $cls) use ($langs, $e): string {
     $out = '<label class="lang ' . $cls . '"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.8 3.9 6 3.9 9.5s-1.3 6.7-3.9 9.5c-2.6-2.8-3.9-6-3.9-9.5S9.4 5.3 12 2.5Z"/></svg>'

@@ -35,7 +35,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
 <div class="admin">
 <?php if ($tab === 'setup' || $tab === 'login'): ?>
   <div class="auth">
-    <a class="logo" href="/"><?= $logoSvg ?><span class="logo-text">Temp<span class="logo-accent">Mail</span> Site</span></a>
+    <a class="logo" href="/"><?= $logoSvg ?><span class="logo-text">Bengal<span class="logo-accent">Email</span></span></a>
     <?php if (!empty($error)): ?><div class="msg err"><?= $e($error) ?></div><?php endif; ?>
     <form method="post" class="box" style="margin-top:16px">
       <?php if ($tab === 'setup'): ?>
@@ -56,7 +56,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
   </div>
 <?php else: ?>
   <div class="a-top">
-    <a class="logo" href="/"><?= $logoSvg ?><span class="logo-text">Temp<span class="logo-accent">Mail</span> Site</span></a>
+    <a class="logo" href="/"><?= $logoSvg ?><span class="logo-text">Bengal<span class="logo-accent">Email</span></span></a>
     <span class="pill">admin</span>
     <span style="margin-left:auto"><?= $form('logout', 'Log out', '', 'btn btn-ghost btn-sm') ?></span>
   </div>
