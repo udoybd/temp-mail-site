@@ -363,7 +363,6 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
               <span class="pill on">live</span> until <?= $t($b['expires_at']) ?>
             <?php elseif ($b['ended_at'] !== null): ?>
               <span class="pill off"><?= $e($b['end_reason'] === 'deleted by owner' ? 'deleted' : ($b['end_reason'] === 'expired' ? 'expired' : (string) $b['end_reason'])) ?></span> <?= $t($b['ended_at']) ?>
-              <?php if ((int) $b['ended_at'] + Tms\Mailbox::REUSE_AFTER > time()): ?><div class="muted small">name free again <?= $t((int) $b['ended_at'] + Tms\Mailbox::REUSE_AFTER) ?></div><?php endif; ?>
             <?php else: ?>
               <span class="pill off">expired</span>
             <?php endif; ?>

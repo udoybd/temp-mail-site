@@ -128,7 +128,7 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
   <div class="box-list-wrap" id="box-list-wrap" hidden>
     <h4>Your addresses</h4>
     <ul class="box-list" id="box-list" translate="no"></ul>
-    <p class="muted small">Tap an address to open its inbox. To use an old name again, press Change and type it.</p>
+    <p class="muted small">Tap an address to open its inbox. Addresses you did not delete stay yours for 24 hours. A deleted name can be made again at once with Change.</p>
   </div>
   <div class="stack">
     <button class="btn" type="button" id="btn-recovery">Show a recovery code</button>

@@ -103,6 +103,15 @@ final class Db
             $pdo->exec('UPDATE mailboxes SET expires_at = created_at + 86400 WHERE expires_at > created_at + 86400');
             $pdo->exec('PRAGMA user_version = 8');
         }
+        if ($version < 9) {
+            // New rule: deleting frees the name at once. Explain it in the FAQ.
+            $pdo->prepare('UPDATE faqs SET answer = ? WHERE answer = ?')->execute(['Every address works for 24 hours from the moment it is made. Each email is deleted automatically 3 hours after it arrives.', 'Every address works for 24 hours from the moment it is made. Each email is deleted automatically 3 hours after it arrives. If you delete an address yourself, that name can be used again after 24 hours.']);
+            if (!$pdo->query("SELECT 1 FROM faqs WHERE question = 'Can I get the same address again?'")->fetchColumn()) {
+                $pdo->exec('UPDATE faqs SET position = position + 1 WHERE position >= 2');
+                $pdo->prepare('INSERT INTO faqs (question, answer, position) VALUES (?, ?, 2)')->execute(['Can I get the same address again?', 'Yes. If you press Delete, the address is free straight away and you can make it again at once with Change. If you do not delete it and just switch to another address (New Address or Change), it stays yours for its full 24 hours: open it again from the list under Account, or type the same name under Change. During those 24 hours nobody else can take that name; after it expires, anyone can.']);
+            }
+            $pdo->exec('PRAGMA user_version = 9');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
