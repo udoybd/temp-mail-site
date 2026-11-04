@@ -8,7 +8,7 @@ return [
 <h2>Step by step</h2>
 <ol><li>Open the <a href="/#inbox">inbox</a> and press <strong>Copy</strong>.</li><li>On Discord, paste the address in the email field and finish sign-up.</li><li>Come back here. The "Verify Email Address" message arrives in seconds. Press <strong>Open confirmation link</strong>.</li></ol>
 <h2>Keep the account?</h2>
-<p>Discord may ask you to verify again later, for example on a new device. If you plan to keep the account, save a recovery code under Account so the mailbox lasts 30 days, or move the account to a permanent email later in Discord settings.</p>
+<p>Discord may ask you to verify again later, for example on a new device. If you plan to keep the account, remember that a temporary address only lasts 24 hours, so move the account to a permanent email later in Discord settings.</p>
 <h2>If Discord rejects the address</h2>
 <p>Some services block known disposable domains. Press <strong>New address</strong> and try again, or pick another domain under <strong>Change</strong> if one is offered.</p>
 HTML,

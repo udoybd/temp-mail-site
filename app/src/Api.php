@@ -37,6 +37,17 @@ final class Api
         }
 
         if ($method === 'POST' && $path === '/api/mailboxes') {
+            // Typing the name of an address you already have just opens it again.
+            $account = Account::current();
+            $name = trim((string) ($body['name'] ?? ''));
+            if ($account && $name !== '') {
+                $address = Mailbox::customAddress($name, $body['domain'] ?? null);
+                $own = $address ? Mailbox::ownedByAddress($account, $address) : null;
+                if ($own) {
+                    Http::json(['mailbox' => self::box($own), 'existing' => true]);
+                    return;
+                }
+            }
             if (!RateLimit::hit('mbox:' . Http::ip(), (int) Config::get('mailboxes_per_ip_per_day'), 86400)) {
                 throw new UserError('Daily limit for new addresses reached on this network. Try again tomorrow.', 429);
             }

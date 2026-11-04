@@ -48,8 +48,7 @@
 
   function left(ts) {
     const s = Math.max(0, ts - Math.floor(Date.now() / 1000));
-    if (s >= 86400) return Math.round(s / 86400) + ' days';
-    if (s >= 3600) return Math.round(s / 3600) + ' hours';
+    if (s >= 3600) { const h = Math.round(s / 3600); return h + (h === 1 ? ' Hour' : ' Hours'); }
     return Math.max(1, Math.round(s / 60)) + ' min';
   }
 
@@ -89,16 +88,28 @@
     if (!allowCustom) $('btn-change').hidden = true;
   }
 
+  // Every address of this account, listed inside the Account pop-up.
   function renderBoxes() {
-    const sel = $('box-select');
-    sel.innerHTML = '';
+    const list = $('box-list');
+    if (!list) return;
+    list.innerHTML = '';
     state.boxes.forEach((b) => {
-      const o = el('option', '', b.address + (b.unread ? ' (' + b.unread + ')' : ''));
-      o.value = b.id;
-      o.selected = state.current && b.id === state.current.id;
-      sel.appendChild(o);
+      const on = state.current && b.id === state.current.id;
+      const li = el('li', on ? 'on' : '');
+      const btn = el('button', 'box-item');
+      btn.type = 'button';
+      const main = el('span', 'box-main');
+      main.append(el('span', 'box-addr', b.address), el('span', 'box-sub', (on ? 'Open now · ' : '') + 'expires in ' + left(b.expires_at)));
+      btn.appendChild(main);
+      if (b.unread) btn.appendChild(el('span', 'box-unread', String(b.unread)));
+      btn.onclick = () => { select(b); $('account-dialog').close(); toast('Opened ' + b.address); };
+      const cp = el('button', 'box-copy', 'Copy');
+      cp.type = 'button';
+      cp.onclick = () => copy(b.address, 'Address copied');
+      li.append(btn, cp);
+      list.appendChild(li);
     });
-    sel.hidden = state.boxes.length < 2;
+    $('box-list-wrap').hidden = state.boxes.length === 0;
   }
 
   function select(box) {
@@ -116,6 +127,12 @@
 
   async function newBox(name, domain) {
     const r = await api('POST', '/api/mailboxes', name ? { name, domain } : {});
+    const known = state.boxes.find((b) => b.id === r.mailbox.id);
+    if (known) {
+      select(known);
+      r.mailbox.existing = true;
+      return r.mailbox;
+    }
     state.boxes.unshift(r.mailbox);
     select(r.mailbox);
     return r.mailbox;
@@ -130,6 +147,7 @@
       r.messages.forEach((m) => state.known.add(m.id));
       state.messages = r.messages;
       state.current.expires_at = r.mailbox.expires_at;
+      $('addr-expiry').textContent = 'Active – Expires in ' + left(r.mailbox.expires_at);
       renderList();
       $('inbox-status').textContent = 'Updated ' + new Date().toLocaleTimeString();
     } catch (e) {
@@ -269,12 +287,11 @@
       ev.preventDefault();
       const f = ev.target;
       try {
-        await newBox(f.elements.name.value.trim(), f.domain.value);
+        const box = await newBox(f.elements.name.value.trim(), f.domain.value);
         f.reset(); f.hidden = true;
-        toast('Address created');
+        toast(box.existing ? 'Opened your address again' : 'Address created');
       } catch (e) { showError(e); }
     };
-    $('box-select').onchange = (ev) => { const b = state.boxes.find((x) => String(x.id) === ev.target.value); if (b) select(b); };
     $('btn-back').onclick = closeReader;
     $('btn-copy-otp').onclick = () => copy($('r-otp-code').textContent, 'Code copied');
     $('btn-del-msg').onclick = async () => {
@@ -311,8 +328,8 @@
     const s = $('account-status');
     if (!s || !info) return;
     s.textContent = info.linked
-      ? 'Linked account · ' + info.devices + ' device(s). Mailboxes last 30 days.'
-      : 'Guest mode. Save a recovery code or link a device to keep mailboxes for 30 days.';
+      ? 'Linked account · ' + info.devices + ' device(s). Each address lasts 24 hours.'
+      : 'Guest mode. Save a recovery code or link a device to open your addresses on another phone or computer.';
   }
 
   document.querySelectorAll('[data-open]').forEach((b) => {

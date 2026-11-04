@@ -24,7 +24,6 @@ $apps = [
           <span class="addr-expiry" id="addr-expiry">Getting your address&hellip;</span>
           <span class="live-pill" id="live-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live Inbox</span>
         </div>
-        <select id="box-select" class="box-select" aria-label="Your addresses" hidden translate="no"></select>
         <div class="addr-row">
           <label class="addr-field">
             <svg class="addr-icon" viewBox="0 0 32 24" aria-hidden="true"><rect width="32" height="24" rx="5" fill="#2f80ed"/><path d="M6.5 7 16 14l9.5-7M6.5 18l6.5-5.5M25.5 18 19 12.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
