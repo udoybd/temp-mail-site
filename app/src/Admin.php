@@ -485,14 +485,30 @@ final class Admin
             ];
         }
         if ($tab === 'mail') {
+            // Everything ever received and every address ever made, kept even after visitors delete them.
+            $q = strtolower(trim((string) ($_GET['q'] ?? '')));
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+            $per = 50;
+            $mp = max(1, (int) ($_GET['mp'] ?? 1));
+            $bp = max(1, (int) ($_GET['bp'] ?? 1));
+            $mailWhere = $q !== '' ? "WHERE l.address LIKE ? ESCAPE '\\' OR l.from_addr LIKE ? ESCAPE '\\' OR l.subject LIKE ? ESCAPE '\\'" : '';
+            $mailArgs = $q !== '' ? [$like, $like, $like] : [];
+            $boxWhere = $q !== '' ? "WHERE b.address LIKE ? ESCAPE '\\'" : '';
+            $boxArgs = $q !== '' ? [$like] : [];
             return [
+                'q' => $q, 'mp' => $mp, 'bp' => $bp, 'per' => $per,
+                'emailTotal' => (int) Db::one('SELECT COUNT(*) AS n FROM mail_log l ' . $mailWhere, $mailArgs)['n'],
                 'emails' => Db::all(
-                    'SELECT msg.id, msg.from_name, msg.from_addr, msg.subject, msg.otp, msg.size, msg.received_at, msg.sent_at, msg.via, msg.trace, box.address
-                     FROM messages msg JOIN mailboxes box ON box.id = msg.mailbox_id ORDER BY msg.received_at DESC LIMIT 50'
+                    'SELECT l.*, EXISTS (SELECT 1 FROM messages WHERE id = l.message_id) AS in_inbox
+                     FROM mail_log l ' . $mailWhere . ' ORDER BY l.received_at DESC, l.id DESC LIMIT ' . $per . ' OFFSET ' . (($mp - 1) * $per),
+                    $mailArgs
                 ),
+                'boxTotal' => (int) Db::one('SELECT COUNT(*) AS n FROM mailbox_log b ' . $boxWhere, $boxArgs)['n'],
                 'boxes' => Db::all(
-                    'SELECT m.address, m.created_at, m.expires_at, (SELECT COUNT(*) FROM messages WHERE mailbox_id = m.id) AS emails
-                     FROM mailboxes m ORDER BY m.created_at DESC LIMIT 50'
+                    'SELECT b.*, (SELECT expires_at FROM mailboxes WHERE address = b.address) AS expires_at,
+                        (SELECT COUNT(*) FROM mail_log l WHERE l.address = b.address AND l.received_at >= b.created_at AND l.received_at <= COALESCE(b.ended_at, ?)) AS emails
+                     FROM mailbox_log b ' . $boxWhere . ' ORDER BY b.created_at DESC, b.id DESC LIMIT ' . $per . ' OFFSET ' . (($bp - 1) * $per),
+                    array_merge([$now], $boxArgs)
                 ),
             ];
         }

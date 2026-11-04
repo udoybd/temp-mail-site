@@ -37,6 +37,35 @@ final class Mailbox
         return Db::one('SELECT * FROM mailboxes WHERE id = ? AND account_id = ?', [$mailboxId, $accountId]);
     }
 
+    /** A deleted address can be taken again (by anyone) this long after it was deleted. */
+    public const REUSE_AFTER = 86400;
+
+    /** The account's own live mailbox with this address, if it has one. */
+    public static function ownedByAddress(int $accountId, string $address): ?array
+    {
+        return Db::one(
+            'SELECT m.id, m.address, m.created_at, m.expires_at,
+                (SELECT COUNT(*) FROM messages WHERE mailbox_id = m.id AND seen = 0) AS unread
+             FROM mailboxes m WHERE m.account_id = ? AND m.address = ? AND m.expires_at > ?',
+            [$accountId, strtolower($address), time()]
+        );
+    }
+
+    /** Normalises a typed name and domain into an address, or null when the name is not valid. */
+    public static function customAddress(string $local, ?string $domain): ?string
+    {
+        $domains = self::domains();
+        $domain = strtolower(trim((string) $domain));
+        if ($domain === '' || !in_array($domain, $domains, true)) {
+            $domain = $domains[0];
+        }
+        $local = strtolower(trim($local));
+        if (!preg_match('/^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$/', $local) || str_contains($local, '..')) {
+            return null;
+        }
+        return $local . '@' . $domain;
+    }
+
     /**
      * @throws UserError when the name is taken, invalid or a limit is hit
      */
@@ -61,6 +90,12 @@ final class Mailbox
             if (!preg_match('/^[a-z0-9](?:[a-z0-9._-]{1,28}[a-z0-9])?$/', $local) || str_contains($local, '..')) {
                 throw new UserError('Use 3 to 30 letters, numbers, dots, dashes or underscores.');
             }
+            $released = Db::one('SELECT released_at FROM released_addresses WHERE address = ?', [$local . '@' . $domain]);
+            $wait = $released ? (int) $released['released_at'] + self::REUSE_AFTER - time() : 0;
+            if ($wait > 0 && !Db::one('SELECT 1 FROM mailboxes WHERE address = ?', [$local . '@' . $domain])) {
+                $h = (int) ceil($wait / 3600);
+                throw new UserError('This address was deleted recently. It can be used again in ' . $h . ($h === 1 ? ' hour.' : ' hours.'));
+            }
             if (!self::available($local . '@' . $domain)) {
                 throw new UserError('That address is taken. Try another name.');
             }
@@ -76,6 +111,7 @@ final class Mailbox
             'INSERT INTO mailboxes (account_id, address, created_at, expires_at) VALUES (?, ?, ?, ?)',
             [$accountId, $address, $now, $now + $ttl]
         );
+        Db::run('INSERT INTO mailbox_log (address, account_id, created_at) VALUES (?, ?, ?)', [$address, $accountId, $now]);
         Stats::bump('mailboxes');
         return ['id' => $id, 'address' => $address, 'created_at' => $now, 'expires_at' => $now + $ttl, 'unread' => 0];
     }
@@ -87,7 +123,7 @@ final class Mailbox
             return false;
         }
         return !Db::one('SELECT 1 FROM mailboxes WHERE address = ?', [$address])
-            && !Db::one('SELECT 1 FROM released_addresses WHERE address = ?', [$address]);
+            && !Db::one('SELECT 1 FROM released_addresses WHERE address = ? AND released_at > ?', [$address, time() - self::REUSE_AFTER]);
     }
 
     public static function delete(int $mailboxId, string $reason): void
@@ -101,9 +137,10 @@ final class Mailbox
         }
         Db::run('DELETE FROM mailboxes WHERE id = ?', [$mailboxId]);
         Db::run(
-            'INSERT OR IGNORE INTO released_addresses (address, released_at, reason) VALUES (?, ?, ?)',
+            'INSERT OR REPLACE INTO released_addresses (address, released_at, reason) VALUES (?, ?, ?)',
             [$box['address'], time(), $reason]
         );
+        Db::run('UPDATE mailbox_log SET ended_at = ?, end_reason = ? WHERE address = ? AND ended_at IS NULL', [time(), $reason, $box['address']]);
     }
 
     /** Finds the live mailbox for any of the given recipient addresses. */

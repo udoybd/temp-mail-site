@@ -79,6 +79,18 @@ final class Db
             Content::migrate($pdo);
             $pdo->exec('PRAGMA user_version = 5');
         }
+        if ($version < 6) {
+            self::addHistoryTables($pdo);
+        }
+        if ($version < 7) {
+            // Addresses now last 24 hours. Live ones keep at most 24 hours from this update.
+            $pdo->prepare('UPDATE mailboxes SET expires_at = MIN(expires_at, CAST(? AS INTEGER))')->execute([time() + 86400]);
+            $fix = $pdo->prepare('UPDATE faqs SET answer = ? WHERE answer = ?');
+            $fix->execute(['Every address works for 24 hours from the moment it is made. Each email is deleted automatically 3 hours after it arrives. If you delete an address yourself, that name can be used again after 24 hours.', 'A guest mailbox works for 5 days. If you save a recovery code or link a second device, your mailboxes last 30 days. Each email is deleted automatically 3 hours after it arrives.']);
+            $fix->execute(['Your address does not vanish after 10 minutes. It lasts a full 24 hours, you can keep several at once, open them on other devices and come back later with a recovery code.', 'Your address does not vanish after 10 minutes. Mailboxes last days, you can keep several at once, open them on other devices and come back later with a recovery code.']);
+            $pdo->prepare("UPDATE posts SET body = REPLACE(body, ?, ?) WHERE slug = 'temp-mail-for-discord'")->execute(['save a recovery code under Account so the mailbox lasts 30 days, or move the account to a permanent email later in Discord settings.', 'remember that a temporary address only lasts 24 hours, so move the account to a permanent email later in Discord settings.']);
+            $pdo->exec('PRAGMA user_version = 7');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
@@ -115,6 +127,51 @@ SQL);
             $bump->execute([Stats::day((int) $row['t']), 'emails']);
         }
         $pdo->exec('PRAGMA user_version = 3');
+    }
+
+    /**
+     * A permanent record of every address made and every email received, for /admin.
+     * Visitors never see it; deleting a mailbox or the 3-hour cleanup does not touch it.
+     */
+    private static function addHistoryTables(PDO $pdo): void
+    {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS mail_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id INTEGER,
+    address TEXT NOT NULL,
+    from_name TEXT,
+    from_addr TEXT,
+    subject TEXT,
+    text_body TEXT,
+    otp TEXT,
+    size INTEGER NOT NULL DEFAULT 0,
+    attachments INTEGER NOT NULL DEFAULT 0,
+    received_at INTEGER NOT NULL,
+    sent_at INTEGER,
+    via TEXT,
+    trace TEXT
+);
+CREATE INDEX IF NOT EXISTS mail_log_time ON mail_log(received_at);
+CREATE INDEX IF NOT EXISTS mail_log_address ON mail_log(address);
+CREATE TABLE IF NOT EXISTS mailbox_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    address TEXT NOT NULL,
+    account_id INTEGER,
+    created_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    end_reason TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_log_time ON mailbox_log(created_at);
+CREATE INDEX IF NOT EXISTS mailbox_log_address ON mailbox_log(address, ended_at);
+INSERT INTO mailbox_log (address, account_id, created_at)
+    SELECT address, account_id, created_at FROM mailboxes ORDER BY created_at;
+INSERT INTO mail_log (message_id, address, from_name, from_addr, subject, text_body, otp, size, attachments, received_at, sent_at, via, trace)
+    SELECT msg.id, box.address, msg.from_name, msg.from_addr, msg.subject, msg.text_body, msg.otp, msg.size,
+        (SELECT COUNT(*) FROM attachments WHERE message_id = msg.id), msg.received_at, msg.sent_at, msg.via, msg.trace
+    FROM messages msg JOIN mailboxes box ON box.id = msg.mailbox_id ORDER BY msg.received_at;
+PRAGMA user_version = 6;
+SQL);
     }
 
     public static function setting(string $key): ?string

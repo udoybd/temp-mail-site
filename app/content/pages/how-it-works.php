@@ -8,8 +8,9 @@
 <h2>How long does it last?</h2>
 <ul>
 <li>Each email is deleted <strong>3 hours</strong> after it arrives.</li>
-<li>A guest mailbox works for <strong>5 days</strong>.</li>
-<li>Save a recovery code or link a second device and your mailboxes last <strong>30 days</strong>.</li>
+<li>Each address works for <strong>24 hours</strong> from the moment it is made.</li>
+<li>Switched to another address? Type the old name under <strong>Change</strong> to open it again while it is still active.</li>
+<li>Deleted an address? Its name can be used again after <strong>24 hours</strong>.</li>
 <li>Accounts that are not used for 30 days are deleted.</li>
 </ul>
 <h2>Use it on your phone too</h2>

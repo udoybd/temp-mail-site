@@ -95,6 +95,11 @@ final class Message
         );
 
         Stats::bump('emails');
+        $logId = Db::insert(
+            'INSERT INTO mail_log (message_id, address, from_name, from_addr, subject, text_body, otp, size, received_at, sent_at, via, trace)
+             SELECT id, ?, from_name, from_addr, subject, text_body, otp, size, received_at, sent_at, via, trace FROM messages WHERE id = ?',
+            [$box['address'], $id]
+        );
 
         $dir = TMS_STORAGE . '/attachments/' . $id;
         foreach ($mail->getAllAttachmentParts() as $i => $part) {
@@ -114,6 +119,7 @@ final class Message
                     $part->getContentId() ? trim((string) $part->getContentId(), '<>') : null, $id . '/' . $i . '.bin']
             );
         }
+        Db::run('UPDATE mail_log SET attachments = (SELECT COUNT(*) FROM attachments WHERE message_id = ?) WHERE id = ?', [$id, $logId]);
         return $id;
     }
 

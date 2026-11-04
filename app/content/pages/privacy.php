@@ -12,7 +12,7 @@
 <h2>How long we keep it</h2>
 <ul>
 <li>Emails: 3 hours after they arrive.</li>
-<li>Guest mailboxes: 5 days. Mailboxes on a linked account: 30 days.</li>
+<li>Mailboxes: 24 hours from when they are made.</li>
 <li>Accounts with no mailboxes that are unused for 30 days are deleted.</li>
 <li>When an address is deleted we keep the address itself (not its email) so it is never given to someone else.</li>
 </ul>

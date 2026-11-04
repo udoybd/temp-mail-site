@@ -28,7 +28,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="/assets/app.css?v=6">
-<link rel="stylesheet" href="/assets/admin.css?v=1">
+<link rel="stylesheet" href="/assets/admin.css?v=2">
 <script src="/assets/admin.js?v=1" defer></script>
 </head>
 <body>
@@ -295,16 +295,40 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     </div>
 
   <?php elseif ($tab === 'mail'): ?>
-    <h2>Latest emails received</h2>
+    <?php
+    $pager = function (int $total, int $page, string $key) use ($per, $q, $e): string {
+        $pages = max(1, (int) ceil($total / $per));
+        if ($pages < 2) {
+            return '';
+        }
+        $link = fn (int $p, string $label) => '<a class="btn btn-sm" href="/admin?' . $e(http_build_query(array_filter(['tab' => 'mail', 'q' => $q, 'mp' => $_GET['mp'] ?? null, 'bp' => $_GET['bp'] ?? null]) + [$key => $p])) . '">' . $label . '</a>';
+        return '<div class="a-bar">' . ($page > 1 ? $link($page - 1, '&larr; Newer') : '') . '<span class="muted small">Page ' . $page . ' of ' . $pages . '</span>' . ($page < $pages ? $link($page + 1, 'Older &rarr;') : '') . '</div>';
+    };
+    ?>
+    <form method="get" class="box row-form" style="margin-top:14px">
+      <input type="hidden" name="tab" value="mail">
+      <input name="q" value="<?= $e($q) ?>" placeholder="Search address, sender or subject" autocomplete="off" autocapitalize="none">
+      <button class="btn btn-primary">Search</button>
+      <?php if ($q !== ''): ?><a class="btn" href="/admin?tab=mail">Clear</a><?php endif; ?>
+    </form>
+    <p class="muted small">Every email and address is kept here for you, even after the visitor deletes it or it expires. Visitors only see email for 3 hours.</p>
+
+    <h2>All emails received <span class="muted small">(<?= $n($emailTotal) ?>)</span></h2>
     <div class="tbl-wrap"><table>
-      <tr><th>Time</th><th>To</th><th>From</th><th>Subject</th><th>Code</th><th class="num">Delay</th><th>Route and time at each server</th></tr>
+      <tr><th>Time</th><th>To</th><th>From</th><th>Subject</th><th>Code</th><th>Status</th><th class="num">Delay</th><th>Route and time at each server</th></tr>
       <?php foreach ($emails as $m): ?>
         <tr>
           <td class="small" style="white-space:nowrap"><?= $t($m['received_at']) ?></td>
-          <td class="small"><?= $e($m['address']) ?></td>
+          <td class="small"><a href="/admin?tab=mail&amp;q=<?= $e(rawurlencode((string) $m['address'])) ?>"><?= $e($m['address']) ?></a></td>
           <td class="small"><?= $e($m['from_addr']) ?></td>
-          <td class="small"><?= $e(mb_strimwidth((string) $m['subject'], 0, 70, '…')) ?></td>
+          <td class="small" style="min-width:200px">
+            <details><summary><?= $e(mb_strimwidth((string) $m['subject'], 0, 70, '…') ?: '(no subject)') ?></summary>
+              <div class="mail-peek"><?= $e(mb_strimwidth((string) $m['text_body'], 0, 4000, '…')) ?></div>
+              <?php if ($m['attachments']): ?><div class="muted small"><?= (int) $m['attachments'] ?> attachment(s), <?= $size((int) $m['size']) ?></div><?php endif; ?>
+            </details>
+          </td>
           <td class="small"><?= $e((string) $m['otp']) ?></td>
+          <td class="small"><?= $m['in_inbox'] ? '<span class="pill on">in inbox</span>' : '<span class="pill">removed</span>' ?></td>
           <td class="num small"><?= $m['sent_at'] ? max(0, (int) $m['received_at'] - (int) $m['sent_at']) . 's' : '-' ?></td>
           <td class="small" style="min-width:260px">
             <?php if ($m['via']): ?><span class="pill <?= $m['via'] === 'cloudflare' ? 'on' : '' ?>"><?= $m['via'] === 'cloudflare' ? 'Cloudflare' : 'Hosting mail server' ?></span><br><?php endif; ?>
@@ -323,22 +347,32 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
           </td>
         </tr>
       <?php endforeach; ?>
-      <?php if (!$emails): ?><tr><td colspan="7" class="muted">No emails stored right now (each is kept 3 hours).</td></tr><?php endif; ?>
+      <?php if (!$emails): ?><tr><td colspan="8" class="muted">No emails<?= $q !== '' ? ' match your search' : ' yet' ?>.</td></tr><?php endif; ?>
     </table></div>
+    <?= $pager($emailTotal, $mp, 'mp') ?>
 
-    <h2>Latest addresses created</h2>
+    <h2>All addresses created <span class="muted small">(<?= $n($boxTotal) ?>, the same address shows again each time it is made)</span></h2>
     <div class="tbl-wrap"><table>
-      <tr><th>Address</th><th>Created</th><th>Expires</th><th class="num">Emails</th></tr>
+      <tr><th>Address</th><th>Created</th><th>Status</th><th class="num">Emails</th></tr>
       <?php foreach ($boxes as $b): ?>
         <tr>
-          <td class="small"><?= $e($b['address']) ?></td>
+          <td class="small"><a href="/admin?tab=mail&amp;q=<?= $e(rawurlencode((string) $b['address'])) ?>"><?= $e($b['address']) ?></a></td>
           <td class="small" style="white-space:nowrap"><?= $t($b['created_at']) ?></td>
-          <td class="small" style="white-space:nowrap"><?= $b['expires_at'] < time() ? '<span class="pill off">expired</span>' : $t($b['expires_at']) ?></td>
+          <td class="small" style="white-space:nowrap">
+            <?php if ($b['ended_at'] === null && $b['expires_at'] !== null && (int) $b['expires_at'] > time()): ?>
+              <span class="pill on">live</span> until <?= $t($b['expires_at']) ?>
+            <?php elseif ($b['ended_at'] !== null): ?>
+              <span class="pill off"><?= $e($b['end_reason'] === 'deleted by owner' ? 'deleted' : ($b['end_reason'] === 'expired' ? 'expired' : (string) $b['end_reason'])) ?></span> <?= $t($b['ended_at']) ?>
+            <?php else: ?>
+              <span class="pill off">expired</span>
+            <?php endif; ?>
+          </td>
           <td class="num small"><?= $n($b['emails']) ?></td>
         </tr>
       <?php endforeach; ?>
-      <?php if (!$boxes): ?><tr><td colspan="4" class="muted">No addresses yet.</td></tr><?php endif; ?>
+      <?php if (!$boxes): ?><tr><td colspan="4" class="muted">No addresses<?= $q !== '' ? ' match your search' : ' yet' ?>.</td></tr><?php endif; ?>
     </table></div>
+    <?= $pager($boxTotal, $bp, 'bp') ?>
 
   <?php else: ?>
     <?php $titles = ['error' => 'Errors', 'ingest' => 'Mail problems (dropped / too big)', 'cron' => 'Cleanup runs', 'admin' => 'Admin activity']; ?>

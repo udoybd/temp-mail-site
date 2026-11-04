@@ -69,3 +69,5 @@ body { background: var(--bg); }
 .faq-top .grow { flex: 1; }
 .msg-card.unseen { border-color: var(--accent); }
 .msg-body { margin: 8px 0; white-space: normal; color: var(--text2); }
+details summary { cursor: pointer; }
+.mail-peek { margin: 6px 0; padding: 8px 10px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; background: var(--bg2); border-radius: 8px; font-size: 13px; }
