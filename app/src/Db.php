@@ -74,6 +74,11 @@ final class Db
             $pdo->exec('ALTER TABLE messages ADD COLUMN trace TEXT');
             $pdo->exec('PRAGMA user_version = 4');
         }
+        if ($version < 5) {
+            // Blog posts, page text, FAQ and contact messages edited from /admin.
+            Content::migrate($pdo);
+            $pdo->exec('PRAGMA user_version = 5');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */

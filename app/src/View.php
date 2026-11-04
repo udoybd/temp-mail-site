@@ -5,12 +5,8 @@ namespace Tms;
 
 final class View
 {
+    /** Fixed pages that are not editable (they hold forms that need code). */
     private const PAGES = [
-        '/how-it-works' => ['how-it-works', 'How Temp Mail Site works', 'Get a free disposable email in three steps: copy the address, use it anywhere, read the code and let it expire.'],
-        '/about' => ['about', 'About', 'Temp Mail Site gives you a free, private, disposable email address with no sign-up.'],
-        '/support' => ['support', 'Support', 'Get help with your temporary inbox, recovery code or account.'],
-        '/privacy' => ['privacy', 'Privacy Policy', 'What Temp Mail Site stores, for how long, and who can see it.'],
-        '/terms' => ['terms', 'Terms of Use', 'The rules for using Temp Mail Site.'],
         '/delete-account' => ['delete-account', 'Delete your account', 'Delete your Temp Mail Site account and every mailbox in it.'],
     ];
 
@@ -24,36 +20,48 @@ final class View
             ]);
             return;
         }
+        if ($path === '/inbox' || $path === '/premium') {
+            header('Location: /#inbox');
+            http_response_code(302);
+            return;
+        }
+        $slug = substr($path, 1);
+        if (isset(Content::PAGES[$slug])) {
+            $page = Content::page($slug);
+            self::render('page', [
+                'title' => $page['title'], 'description' => $page['description'], 'page' => $page, 'slug' => $slug,
+                'faqs' => $slug === 'faq' ? Content::faqs() : [],
+            ]);
+            return;
+        }
         if (isset(self::PAGES[$path])) {
             [$view, $title, $description] = self::PAGES[$path];
             self::render('pages/' . $view, ['title' => $title, 'description' => $description]);
             return;
         }
         if ($path === '/blog') {
-            self::render('blog-index', ['title' => 'Guides & tips', 'description' => 'How to use a temporary email for sign-ups, verification codes and privacy.', 'posts' => self::posts()]);
+            self::render('blog-index', ['title' => 'Blog', 'description' => 'Guides and tips: how to use a temporary email for sign-ups, verification codes and privacy.', 'posts' => Content::posts()]);
             return;
         }
-        if (preg_match('#^/blog/([a-z0-9-]+)$#', $path, $m) && isset(self::posts()[$m[1]])) {
-            $post = self::posts()[$m[1]];
-            self::render('blog-post', ['title' => $post['title'], 'description' => $post['description'], 'post' => $post, 'slug' => $m[1]]);
+        if (preg_match('#^/blog/([a-z0-9-]+)$#', $path, $m) && ($post = Content::post($m[1]))) {
+            self::render('blog-post', [
+                'title' => $post['title'], 'description' => $post['description'], 'post' => $post, 'slug' => $m[1],
+                'more' => array_values(array_filter(Content::posts(4), fn ($p) => $p['slug'] !== $m[1])),
+            ]);
             return;
         }
         http_response_code(404);
         self::render('pages/not-found', ['title' => 'Page not found', 'description' => 'This page does not exist.']);
     }
 
-    /** @return array<string, array> slug => post, newest first */
+    /** Published posts keyed by slug, newest first (used by the sitemap). */
     public static function posts(): array
     {
-        static $posts = null;
-        if ($posts === null) {
-            $posts = [];
-            foreach (glob(TMS_ROOT . '/app/content/blog/*.php') ?: [] as $file) {
-                $posts[basename($file, '.php')] = require $file;
-            }
-            uasort($posts, fn ($a, $b) => strcmp($b['date'], $a['date']));
+        $out = [];
+        foreach (Content::posts(1000) as $p) {
+            $out[$p['slug']] = $p;
         }
-        return $posts;
+        return $out;
     }
 
     public static function render(string $view, array $vars): void
@@ -65,6 +73,7 @@ final class View
         $vars['analytics'] = (string) Config::get('analytics_id');
         $vars['support'] = (string) Config::get('support_email');
         $vars['path'] = '/' . trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
+        $vars['cs'] = Content::settings();
         extract($vars, EXTR_SKIP);
         $e = [Http::class, 'e'];
         ob_start();

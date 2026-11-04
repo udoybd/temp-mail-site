@@ -1,5 +1,3 @@
-<section class="page"><div class="wrap narrow">
-<h1>Terms of Use</h1>
 <p class="post-meta">Last updated: <?= date('j F Y', filemtime(__FILE__)) ?></p>
 <p>By using <?= $e($site) ?> you agree to these terms.</p>
 <h2>The service</h2>
@@ -12,4 +10,3 @@
 <p>To the extent the law allows, we are not liable for any loss caused by using the service, including lost email or lost access to accounts registered with a temporary address.</p>
 <h2>Changes</h2>
 <p>We may change these terms. The date at the top shows the latest version.</p>
-</div></section>

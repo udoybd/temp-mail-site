@@ -1,5 +1,3 @@
-<section class="page"><div class="wrap narrow">
-<h1>Privacy Policy</h1>
 <p class="post-meta">Last updated: <?= date('j F Y', filemtime(__FILE__)) ?></p>
 <p>This policy explains what <?= $e($site) ?> ("we") stores when you use the site, why, and for how long. Short version: we do not want to know who you are, and we delete everything on a timer.</p>
 <h2>What we store</h2>
@@ -29,5 +27,4 @@
 <h2>Your choices</h2>
 <p>You can delete any address at any time from the inbox, or delete your whole account on the <a href="/delete-account">Delete account</a> page.</p>
 <h2>Contact</h2>
-<p>Questions about privacy: see <a href="/support">Support</a>.</p>
-</div></section>
+<p>Questions about privacy: see <a href="/contact">Support</a>.</p>

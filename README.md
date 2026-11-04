@@ -10,7 +10,8 @@ shared hosting (cPanel, PHP 8.1+) with SQLite, so there is no database to set up
 | --- | --- |
 | `public/` | Web root (point the domain's document root here) |
 | `app/src/` | PHP classes (`Tms\...`) |
-| `app/views/`, `app/content/blog/` | Pages and blog posts |
+| `app/views/` | Page templates |
+| `app/content/` | Original text for pages, FAQ and the first blog posts (copied into the database once, then edited in `/admin`) |
 | `bin/pipe.php` | cPanel "Default Address → Pipe to a Program" target |
 | `bin/cron.php` | Cleanup, run every 10 minutes |
 | `worker/email-worker.js` | Cloudflare Email Worker for extra domains |
@@ -51,3 +52,11 @@ Forgot the password? Delete `storage/admin.php` and open `/admin` again.
 The panel shows counts (addresses and emails per day), live totals, delivery speed,
 whether the cleanup cron runs, the latest emails and addresses, and the logs.
 Mail domains are added, paused, made default or removed under **Domains**.
+
+### Content (Blog, Pages, FAQ, Messages, Settings)
+
+- **Blog**: create, edit, delete posts; draft or published; publish date; cover image; simple HTML editor with image upload and preview. Images go to `public/uploads/` (not in git).
+- **Pages**: edit the text of Features, FAQ, Contact, How it works, About, Support, Privacy, Terms. "Reset" restores the original text.
+- **FAQ**: add, edit, reorder and delete the questions on `/faq`.
+- **Messages**: what visitors send from the `/contact` form.
+- **Settings**: home page title and ticks, footer text, Follow Us links (an icon shows only when its link is set).

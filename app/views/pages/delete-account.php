@@ -1,5 +1,6 @@
 <section class="page"><div class="wrap narrow">
-<h1>Delete your account</h1>
+<div class="page-head"><h1>Delete your account</h1></div>
+<div class="page-card prose">
 <p>Deleting your account removes every mailbox, email and attachment in it at once. This cannot be undone. Old addresses are never given to anyone else.</p>
 <h2>Delete the account on this browser</h2>
 <p><button class="btn danger" type="button" id="delete-this">Delete this browser's account</button></p>
@@ -10,5 +11,6 @@
   <button class="btn danger" type="submit">Delete my account</button>
 </form>
 <p id="delete-done" hidden><strong>Your account has been deleted.</strong> <a href="/">Get a new address</a></p>
-<p class="muted small">No recovery code? Open the site on the device that has your mailboxes and use the button above, or contact <a href="/support">support</a>.</p>
+<p class="muted small">No recovery code? Open the site on the device that has your mailboxes and use the button above, or contact <a href="/contact">support</a>.</p>
+</div>
 </div></section>
