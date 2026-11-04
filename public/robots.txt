@@ -4,4 +4,4 @@ Disallow: /m/
 Disallow: /attachment/
 Disallow: /link/
 Disallow: /admin
-Sitemap: https://jamaluddin.info/sitemap.xml
+Sitemap: https://bengal.email/sitemap.xml
