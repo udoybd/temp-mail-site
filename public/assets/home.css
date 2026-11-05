@@ -88,3 +88,4 @@
 .hm .tl li{grid-template-columns:58px 18px 1fr}
 .hm .tl li:not(:last-child)::after{left:calc(58px + 12px + 8px)}
 }
+.hero h1 em{font-style:normal;color:var(--accent)}
