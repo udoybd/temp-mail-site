@@ -117,7 +117,7 @@
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th scope="col">What you need</th><th scope="col">Bengal.email temp mail</th><th scope="col">Your real email</th></tr></thead>
+        <thead><tr><th scope="col">What you need</th><th scope="col">Bengal.email temp mail</th><th scope="col">A new real email account</th></tr></thead>
         <tbody>
           <tr><th scope="row">Sign-up needed</th><td class="yes">None</td><td class="no">An account and password</td></tr>
           <tr><th scope="row">Ready in</th><td class="yes">1 second</td><td class="no">Varies by provider</td></tr>

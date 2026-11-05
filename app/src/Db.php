@@ -125,6 +125,12 @@ final class Db
             $pdo->prepare("UPDATE settings SET value = ? WHERE key = 'content_hero_ticks' AND value = ?")->execute(['No sign-up, Lives 24 hours, Free to use', 'No sign-up, Auto-expires, Free forever']);
             $pdo->exec('PRAGMA user_version = 10');
         }
+        if ($version < 11) {
+            // Clearer address-reuse wording (Delete frees the name for everyone).
+            $pdo->prepare('UPDATE faqs SET answer = ? WHERE question = ?')->execute(['Yes, if you do not delete it. If you only switch to another address (New Address or Change), the old one stays yours for its full 24 hours: open it again from the list under Account, or type the same name under Change. If you press Delete, the name is free straight away for everyone, so you can take it again at once, but anyone else can take it too. After 24 hours every address is free for anyone.', 'Can I get the same address again?']);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['When an address is deleted we keep the address itself (not its email) so it is never given to someone else.', 'When an address is deleted or expires, its emails are deleted too and the name becomes free for anyone to use again. We keep only a private record of the address name and its times, with no email content.']);
+            $pdo->exec('PRAGMA user_version = 11');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
