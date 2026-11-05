@@ -140,7 +140,7 @@
       <p class="more"><a href="https://bengal.email/faq">See all questions →</a></p>
       <div class="panel help"><h3>Still need help?</h3><p>Write to us from the contact page and we will reply by email.</p><a class="btn btn-primary" href="https://bengal.email/contact">Contact support</a></div>
     </div>
-    <div class="faq">
+    <div class="hfaq">
       <details open><summary>What is temp mail?</summary><p>Temp mail is a free, disposable email address that receives messages for a short time and then deletes itself. You use it instead of your real email when a site asks for an address you do not want to share.</p></details>
       <details><summary>How long does a Bengal.email address last?</summary><p>Every address lives for 24 hours from the moment it is created. Your emails stay in the inbox for that whole time unless you delete them sooner.</p></details>
       <details><summary>Is Bengal.email really free?</summary><p>Yes, Bengal.email is free to use. There is no sign-up and no credit card.</p></details>
