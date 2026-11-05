@@ -165,6 +165,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 46, 232,
 .addr-field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; border-radius: 12px; border: 1px solid var(--line2); background: var(--bg2); cursor: text; }
 .addr-icon { width: 34px; height: 26px; }
 .addr { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--text); font: 700 22px/1.2 var(--font); letter-spacing: -.01em; outline: none; text-overflow: ellipsis; }
+.addr { padding-left: 4px; letter-spacing: 0; }
 .addr:focus { outline: none; }
 .btn-copy { min-width: 142px; height: 56px; font-size: 19px; border-radius: 12px; }
 .addr-actions { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 18px; }

@@ -130,6 +130,16 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
   <?php elseif ($tab === 'blog'): ?>
     <?php if ($post === null): ?>
       <div class="a-bar"><h2>Blog posts</h2><a class="btn btn-primary" href="/admin?tab=blog&amp;edit=new">+ New post</a></div>
+      <form method="post" class="box" style="margin-bottom:16px">
+        <?= $hidden('csrf', $csrf) . $hidden('action', 'drip-posts') . $hidden('tab', 'blog') ?>
+        <strong>Schedule many posts</strong>
+        <p class="muted small">Write all your posts and save them as <b>Draft</b>. Then press the button: every draft is published one by one, in the order you wrote them. You can also set a future date on a single post.</p>
+        <div class="grid-2">
+          <label>First post goes live<input type="datetime-local" name="start" value="<?= $e((new DateTimeImmutable('@' . (time() + 3600)))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
+          <label>Then one post every<span style="display:flex;gap:8px"><input type="number" name="every" value="1" min="1" max="90" style="width:90px"><select name="unit"><option value="days">day(s)</option><option value="hours">hour(s)</option></select></span></label>
+        </div>
+        <button class="btn btn-primary" style="margin-top:10px">Schedule all drafts</button>
+      </form>
       <div class="tbl-wrap"><table>
         <tr><th>Title</th><th>Status</th><th>Date</th><th>Updated</th><th></th></tr>
         <?php foreach ($posts as $p): ?>
@@ -156,7 +166,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         <label>Link (slug) <span class="muted small">bengal.email/blog/<b id="slug-preview"><?= $e($post['slug']) ?></b></span><input name="slug" id="f-slug" value="<?= $e($post['slug']) ?>" placeholder="made from the title if empty" maxlength="120" data-auto="<?= $post['id'] ? '0' : '1' ?>"></label>
         <label>Short description <span class="muted small">(shown on the blog list and in Google)</span><input name="description" value="<?= $e($post['description']) ?>" maxlength="300"></label>
         <div class="grid-2">
-          <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (visible)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
+          <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (a future date = scheduled)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
           <label>Publish date<input type="datetime-local" name="date" value="<?= $e((new DateTimeImmutable('@' . (int) $post['published_at']))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
         </div>
         <div class="cover-row">

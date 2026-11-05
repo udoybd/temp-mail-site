@@ -327,6 +327,25 @@ final class Admin
                 $msg = $status === 'published' ? 'Post saved and published.' : 'Post saved as a draft (not visible on the site).';
                 return ['blog', $msg, null, ['edit' => $id]];
 
+            case 'drip-posts':
+                $tz = new \DateTimeZone((string) (Config::get('timezone') ?: 'UTC'));
+                try {
+                    $start = (new \DateTimeImmutable($str('start', 40) ?: 'now', $tz))->getTimestamp();
+                } catch (\Exception $e) {
+                    $start = $now;
+                }
+                $every = max(1, min(90, (int) ($_POST['every'] ?? 1)));
+                $step = $every * (($_POST['unit'] ?? 'days') === 'hours' ? 3600 : 86400);
+                $drafts = Db::all("SELECT id FROM posts WHERE status = 'draft' ORDER BY id ASC");
+                if (!$drafts) {
+                    return ['blog', null, 'There are no drafts to schedule. Save posts as Draft first.'];
+                }
+                foreach ($drafts as $i => $d) {
+                    Db::run("UPDATE posts SET status = 'published', published_at = ?, updated_at = ? WHERE id = ?", [$start + $i * $step, $now, (int) $d['id']]);
+                }
+                Log::write('admin', 'scheduled ' . count($drafts) . ' drafts, one every ' . $every . ' ' . ($step % 86400 === 0 ? 'day(s)' : 'hour(s)'));
+                return ['blog', count($drafts) . ' draft post(s) scheduled. They appear on the site one by one, starting at the time you chose.', null];
+
             case 'delete-post':
                 $row = Db::one('SELECT slug FROM posts WHERE id = ?', [(int) ($_POST['id'] ?? 0)]);
                 if ($row) {
