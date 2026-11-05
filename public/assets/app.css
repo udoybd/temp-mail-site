@@ -419,11 +419,11 @@ font { background: transparent !important; box-shadow: none !important; }
   .btn-account { padding: 0 9px; font-size: 14px; height: 36px; }
 }
 
-/* Live Inbox: a green dot with a soft ring that pulses outward */
-.live-dot{position:relative;width:9px;height:9px;border-radius:50%;background:#16a34a;flex:none}
-.live-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:#16a34a;opacity:.5}
-.live-pill:not(.paused) .live-dot::after{animation:livering 1.8s ease-out infinite}
-.live-pill.paused .live-dot{background:#9aa3bb}
-.live-pill.paused .live-dot::after{display:none}
-@keyframes livering{0%{transform:scale(1);opacity:.55}100%{transform:scale(3.2);opacity:0}}
-@media (prefers-reduced-motion:reduce){.live-dot::after{animation:none!important}}
+/* Live Inbox: the icon waves light up one after another */
+.live-pill svg{width:20px;height:20px}
+.live-pill:not(.paused) .w1,.live-pill:not(.paused) .w2{animation:livewave 1.6s ease-in-out infinite}
+.live-pill:not(.paused) .w2{animation-delay:.35s}
+.live-pill:not(.paused) .w0{animation:livedot 1.6s ease-in-out infinite;transform-origin:12px 12px}
+@keyframes livewave{0%,15%{opacity:.18}35%,70%{opacity:1}100%{opacity:.18}}
+@keyframes livedot{0%,100%{transform:scale(1)}40%{transform:scale(1.3)}}
+@media (prefers-reduced-motion:reduce){.live-pill .w0,.live-pill .w1,.live-pill .w2{animation:none!important}}
