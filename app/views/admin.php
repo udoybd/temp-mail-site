@@ -11,7 +11,7 @@ $size = function (int $bytes): string {
     }
     return '';
 };
-$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
+$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'code' => 'Code', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
 $hidden = fn (string $k, $v) => '<input type="hidden" name="' . $e($k) . '" value="' . $e((string) $v) . '">';
 $logoSvg = '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><rect width="40" height="32" rx="7" fill="#2f80ed"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 $form = fn (string $action, string $label, string $domain = '', string $class = 'btn btn-sm') =>
@@ -243,10 +243,23 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     <form method="post" class="box">
       <?= $hidden('csrf', $csrf) . $hidden('action', 'save-settings') . $hidden('tab', 'settings') ?>
       <?php foreach (Tms\Content::SETTINGS as $key => [$label]): ?>
+        <?php if (in_array($key, ['header_code', 'footer_code'], true)) { continue; } ?>
         <?php if ($key === 'social_facebook'): ?><h3>Follow Us links <span class="muted small">(leave empty to hide an icon)</span></h3><?php endif; ?>
         <label><?= $e($label) ?><input name="<?= $e($key) ?>" value="<?= $e($settings[$key]) ?>" maxlength="1000"<?= str_starts_with($key, 'social_') ? ' type="url" placeholder="https://"' : '' ?>></label>
       <?php endforeach; ?>
       <button class="btn btn-primary">Save settings</button>
+    </form>
+
+  <?php elseif ($tab === 'code'): ?>
+    <h2>Custom code</h2>
+    <p class="muted small">Paste ads, analytics or site-verification code here. It is added exactly as you paste it, on every public page.</p>
+    <form method="post" class="box">
+      <?= $hidden('csrf', $csrf) . $hidden('action', 'save-code') . $hidden('tab', 'code') ?>
+      <label>Header code <span class="muted small">(added just before &lt;/head&gt;)</span>
+        <textarea name="header_code" rows="8" maxlength="20000" spellcheck="false" style="font-family:monospace;width:100%"><?= $e($settings['header_code']) ?></textarea></label>
+      <label>Footer code <span class="muted small">(added just before &lt;/body&gt;)</span>
+        <textarea name="footer_code" rows="8" maxlength="20000" spellcheck="false" style="font-family:monospace;width:100%"><?= $e($settings['footer_code']) ?></textarea></label>
+      <button class="btn btn-primary">Save code</button>
     </form>
 
   <?php elseif ($tab === 'domains'): ?>
@@ -269,7 +282,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
           <td style="white-space:nowrap">
             <?php if ($d['name'] !== $default): ?><?= $form('default-domain', 'Make default', $d['name']) ?><?php endif; ?>
             <?= $form('toggle-domain', $d['active'] ? 'Pause' : 'Turn on', $d['name']) ?>
-            <?php if (!$d['live']): ?><?= $form('remove-domain', 'Remove', $d['name'], 'btn btn-sm danger') ?><?php endif; ?>
+            <form method="post" class="inline" onsubmit="return confirm('Delete <?= $e($d['name']) ?> for good? Its live addresses stop working.')"><input type="hidden" name="csrf" value="<?= $e($csrf) ?>"><input type="hidden" name="action" value="remove-domain"><input type="hidden" name="domain" value="<?= $e($d['name']) ?>"><button class="btn btn-sm danger">Delete</button></form>
           </td>
         </tr>
       <?php endforeach; ?>

@@ -33,6 +33,8 @@ final class Content
         'social_x' => ['X (Twitter) link', ''],
         'social_telegram' => ['Telegram link', ''],
         'social_youtube' => ['YouTube link', ''],
+        'header_code' => ['Header code (added before </head> on every page)', ''],
+        'footer_code' => ['Footer code (added before </body> on every page)', ''],
     ];
 
     // ---- schema -------------------------------------------------------------

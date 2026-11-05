@@ -14,7 +14,7 @@ final class Admin
 {
     private const COOKIE = 'tms_admin';
     private const SESSION_TTL = 7 * 86400;
-    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'domains', 'mail', 'logs'];
+    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'code', 'domains', 'mail', 'logs'];
 
     public static function handle(string $method, string $path): void
     {
@@ -260,10 +260,6 @@ final class Admin
                 return ['domains', $domain . ' is now the default for new addresses.', null];
 
             case 'remove-domain':
-                $live = (int) Db::one('SELECT COUNT(*) AS n FROM mailboxes WHERE address LIKE ? AND expires_at > ?', ['%@' . $domain, time()])['n'];
-                if ($live > 0) {
-                    return ['domains', null, $domain . ' still has ' . $live . ' live addresses. Pause it instead; remove it after they expire.'];
-                }
                 if (Db::one('SELECT active FROM domains WHERE name = ?', [$domain])['active'] ?? 0) {
                     if (count(Mailbox::domains()) <= 1) {
                         return ['domains', null, 'Keep at least one domain switched on.'];
@@ -384,8 +380,18 @@ final class Admin
                 Db::run('UPDATE contact_messages SET seen = 1');
                 return ['messages', 'All messages marked as read.', null];
 
+            case 'save-code':
+                foreach (['header_code', 'footer_code'] as $key) {
+                    Db::setSetting('content_' . $key, $str($key, 20000));
+                }
+                Log::write('admin', 'saved custom header/footer code');
+                return ['code', 'Code saved. It is now on every page.', null];
+
             case 'save-settings':
                 foreach (array_keys(Content::SETTINGS) as $key) {
+                    if (in_array($key, ['header_code', 'footer_code'], true)) {
+                        continue;
+                    }
                     $value = $str($key, 1000);
                     if (str_starts_with($key, 'social_') && $value !== '' && !preg_match('#^https?://#i', $value)) {
                         return ['settings', null, 'Links must start with https:// (check ' . Content::SETTINGS[$key][0] . ').'];
@@ -466,7 +472,7 @@ final class Admin
         if ($tab === 'messages') {
             return ['messages' => Db::all('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 200')];
         }
-        if ($tab === 'settings') {
+        if ($tab === 'settings' || $tab === 'code') {
             return ['settings' => Content::settings()];
         }
         if ($tab === 'domains') {

@@ -60,6 +60,7 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <script async src="https://www.googletagmanager.com/gtag/js?id=<?= $e($analytics) ?>"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','<?= $e($analytics) ?>');</script>
 <?php endif; ?>
+<?= $cs['header_code'] ?? '' ?>
 </head>
 <body>
 <div class="bg-waves" aria-hidden="true"></div>
@@ -153,5 +154,6 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <div id="google_translate_element" hidden></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script src="/assets/app.js?v=<?= $v ?>" defer></script>
+<?= $cs['footer_code'] ?? '' ?>
 </body>
 </html>
