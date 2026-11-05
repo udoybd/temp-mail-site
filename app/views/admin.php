@@ -72,7 +72,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     <h2>Right now</h2>
     <div class="tiles">
       <div class="tile"><div class="k">Live addresses</div><div class="v"><?= $n($live['mailboxes']) ?></div></div>
-      <div class="tile"><div class="k">Emails stored</div><div class="v"><?= $n($live['emails']) ?></div><div class="s">kept 3 hours each</div></div>
+      <div class="tile"><div class="k">Emails stored</div><div class="v"><?= $n($live['emails']) ?></div><div class="s">kept up to 24 hours</div></div>
       <div class="tile"><div class="k">Visitors (accounts)</div><div class="v"><?= $n($live['accounts']) ?></div><div class="s"><?= $n($live['online']) ?> active in last 10 min</div></div>
       <div class="tile"><div class="k">Storage used</div><div class="v"><?= $size($disk) ?></div></div>
     </div>
@@ -311,7 +311,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <button class="btn btn-primary">Search</button>
       <?php if ($q !== ''): ?><a class="btn" href="/admin?tab=mail">Clear</a><?php endif; ?>
     </form>
-    <p class="muted small">Every email and address is kept here for you, even after the visitor deletes it or it expires. Visitors only see email for 3 hours.</p>
+    <p class="muted small">Every email and address is kept here for you, even after the visitor deletes it or it expires. Visitors only see email for up to 24 hours.</p>
 
     <h2>All emails received <span class="muted small">(<?= $n($emailTotal) ?>)</span></h2>
     <div class="tbl-wrap"><table>

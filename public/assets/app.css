@@ -393,3 +393,7 @@ font { background: transparent !important; box-shadow: none !important; }
 .box-unread { flex: none; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
 .box-copy { flex: none; padding: 0 12px; border: 1px solid var(--line2); border-radius: 12px; background: var(--card); color: var(--text2); font: 600 13px var(--font); cursor: pointer; }
 .box-copy:hover { border-color: var(--accent); color: var(--accent); }
+
+.mail .mail-del{margin-left:auto;flex:none;border:0;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;padding:6px;display:grid;place-items:center}
+.mail .mail-del:hover{background:var(--danger-soft);color:var(--danger)}
+.inbox-status{display:none!important}

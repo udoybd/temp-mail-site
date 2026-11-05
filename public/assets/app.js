@@ -182,7 +182,17 @@
         chip.onclick = (ev) => { ev.stopPropagation(); copy(m.otp, 'Code copied'); };
         main.appendChild(chip);
       }
-      li.append(img, main);
+      const del = el('button', 'mail-del');
+      del.type = 'button'; del.title = 'Delete this email'; del.setAttribute('aria-label', 'Delete this email');
+      del.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l.8 13a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-13M10 10.5v6.5M14 10.5v6.5"/></svg>';
+      del.onclick = async (ev) => {
+        ev.stopPropagation();
+        await api('DELETE', '/api/messages/' + m.id).catch(showError);
+        state.messages = state.messages.filter((x) => x.id !== m.id);
+        renderList();
+        toast('Email deleted');
+      };
+      li.append(img, main, del);
       li.onclick = () => openMessage(m.id);
       list.appendChild(li);
     });

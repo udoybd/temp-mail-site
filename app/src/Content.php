@@ -26,8 +26,8 @@ final class Content
     /** Site-wide text and links editable under Admin → Settings. key => [label, default]. */
     public const SETTINGS = [
         'hero_badge' => ['Small line above the title', 'Instant inbox · Works on phone and desktop'],
-        'hero_title' => ['Home page title', 'Free Temporary Email Address'],
-        'hero_ticks' => ['Ticks under the title (comma separated)', 'No sign-up, Auto-expires, Free forever'],
+        'hero_title' => ['Home page title', 'Free Temp Mail: Temporary Email Address in One Click'],
+        'hero_ticks' => ['Ticks under the title (comma separated)', 'No sign-up, Lives 24 hours, Free to use'],
         'footer_text' => ['Footer text under the logo', 'Free temporary email service to keep your inbox clean and safe.'],
         'social_facebook' => ['Facebook page link', ''],
         'social_x' => ['X (Twitter) link', ''],
