@@ -418,3 +418,11 @@ font { background: transparent !important; box-shadow: none !important; }
   .icon-toggle, .menu-btn { width: 36px; height: 36px; }
   .btn-account { padding: 0 9px; font-size: 14px; height: 36px; }
 }
+
+/* Live Inbox: the dot sends out waves one after another */
+.live-pill:not(.paused) .w0{animation:livedot 1.8s ease-in-out infinite;transform-origin:12px 12px}
+.live-pill:not(.paused) .w1{animation:livewave 1.8s ease-in-out infinite;animation-delay:.2s}
+.live-pill:not(.paused) .w2{animation:livewave 1.8s ease-in-out infinite;animation-delay:.5s}
+@keyframes livedot{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+@keyframes livewave{0%{opacity:0}25%{opacity:1}65%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.live-pill .w0,.live-pill .w1,.live-pill .w2{animation:none!important}}
