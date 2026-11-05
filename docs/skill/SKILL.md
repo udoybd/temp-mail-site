@@ -140,3 +140,7 @@ TMS_STORAGE=/tmp/tms php -S 127.0.0.1:8080 -t public tests/dev-router.php
 - 2026-10-28: built on jamaluddin.info (cPanel), moved mail to Cloudflare Email Routing + Worker for speed.
 - 2026-11-04: redesign (indigo), editable content in admin (PR #1), 24 h rules (PR #2, #3), moved to bengal.email on folafal DirectAdmin, renamed Bengal.email, Monetag verified via meta tag, Code tab and domain Delete added live, jamaluddin.info emptied.
 - Original goal: same features as ilovetempmail.com, but never copy its brand, logo, illustrations or text.
+
+## Reference
+- Full copy of this skill in the repo: `docs/skill/SKILL.md`.
+- Original research and plan doc (ilovetempmail.com study): https://claude.ai/artifact/5rc254jfKB6A3LnV445ynU
