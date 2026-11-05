@@ -1,3 +1,6 @@
+.hm h1,.hm h2,.hm h3{line-height:1.2;letter-spacing:-.015em;text-wrap:balance;margin:0}
+.hm p{margin:0}
+.hm svg{flex:none}
 .hm{--green:#16a34a;--green-soft:#e8f7ee;--violet-soft:#f0ebff;--red:#ef3b3b;--red-soft:#fff1f1;--shadow-sm:0 6px 18px rgba(36,54,110,.06);--mono:ui-monospace,Menlo,Consolas,monospace;color:var(--text);line-height:1.65}
 :root[data-theme="dark"] .hm{--green:#22c55e;--green-soft:#11281c;--violet-soft:#211a44;--red:#ff5f6d;--red-soft:#2a1520;--shadow-sm:0 6px 18px rgba(0,0,0,.25)}
 .hm .content{max-width:1006px;margin:0 auto}
