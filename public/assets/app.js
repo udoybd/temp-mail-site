@@ -18,6 +18,26 @@
     return data;
   }
 
+  // Pretty confirm box (replaces the browser's own popup). Resolves true on OK.
+  function askConfirm(title, text, okLabel) {
+    return new Promise((resolve) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'dlg-back';
+      wrap.innerHTML = '<div class="dlg" role="alertdialog" aria-modal="true"><h3></h3><p></p><div class="dlg-act"><button type="button" class="btn dlg-no">Cancel</button><button type="button" class="btn btn-danger dlg-yes"></button></div></div>';
+      wrap.querySelector('h3').textContent = title;
+      wrap.querySelector('p').textContent = text;
+      wrap.querySelector('.dlg-yes').textContent = okLabel || 'Delete';
+      const done = (v) => { wrap.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+      const onKey = (e) => { if (e.key === 'Escape') done(false); };
+      wrap.querySelector('.dlg-no').onclick = () => done(false);
+      wrap.querySelector('.dlg-yes').onclick = () => done(true);
+      wrap.onclick = (e) => { if (e.target === wrap) done(false); };
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(wrap);
+      wrap.querySelector('.dlg-no').focus();
+    });
+  }
+
   function toast(text) {
     const t = $('toast');
     if (!t) return;
@@ -349,7 +369,7 @@
   const recoveryBtn = $('btn-recovery');
   if (recoveryBtn) {
     recoveryBtn.onclick = async () => {
-      if (!window.confirm('Make a new recovery code? Any older code stops working.')) return;
+      
       try {
         const r = await api('POST', '/api/account/recovery-code');
         const out = $('recovery-out');
@@ -386,7 +406,7 @@
   if (delForm) {
     delForm.onsubmit = async (ev) => {
       ev.preventDefault();
-      if (!window.confirm('Delete the account and every mailbox in it? This cannot be undone.')) return;
+      if (!(await askConfirm('Delete this account?', 'Every mailbox in it will be deleted. This cannot be undone.', 'Delete account'))) return;
       try {
         await api('POST', '/api/account/delete', { code: delForm.code.value });
         $('delete-done').hidden = false;
@@ -395,7 +415,7 @@
     };
     const thisDevice = $('delete-this');
     if (thisDevice) thisDevice.onclick = async () => {
-      if (!window.confirm('Delete the account used by this browser and every mailbox in it?')) return;
+      if (!(await askConfirm('Delete this account?', 'The account used by this browser and every mailbox in it will be deleted. This cannot be undone.', 'Delete account'))) return;
       try {
         await api('POST', '/api/account/delete', {});
         $('delete-done').hidden = false;
