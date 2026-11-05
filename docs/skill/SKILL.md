@@ -1,5 +1,5 @@
 ---
-name: temp-mail-site
+name: bengal-email-site
 description: Build, deploy, fix or maintain Jamal's Bengal.email temp mail site (https://bengal.email) on folafal.com DirectAdmin hosting + free Cloudflare Email Routing, repo udoybd/temp-mail-site.
 ---
 
