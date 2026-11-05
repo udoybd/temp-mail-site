@@ -334,7 +334,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <button class="btn btn-primary">Search</button>
       <?php if ($q !== ''): ?><a class="btn" href="/admin?tab=mail">Clear</a><?php endif; ?>
     </form>
-    <p class="muted small">Every email and address is kept here for you, even after the visitor deletes it or it expires. Visitors only see email for up to 24 hours.</p>
+    <p class="muted small">Every email record (sender address, time, size) is kept here for you, even after the visitor deletes it or it expires. The subject, text and code of each email are erased automatically 7 days after it arrives. Visitors only see email for up to 24 hours.</p>
 
     <h2>All emails received <span class="muted small">(<?= $n($emailTotal) ?>)</span></h2>
     <div class="tbl-wrap"><table>
