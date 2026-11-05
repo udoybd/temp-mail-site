@@ -120,8 +120,8 @@
         <thead><tr><th scope="col">What you need</th><th scope="col">Bengal.email temp mail</th><th scope="col">Your real email</th></tr></thead>
         <tbody>
           <tr><th scope="row">Sign-up needed</th><td class="yes">None</td><td class="no">An account and password</td></tr>
-          <tr><th scope="row">Ready in</th><td class="yes">1 second</td><td class="no">Several minutes</td></tr>
-          <tr><th scope="row">Spam later</th><td class="yes">Stops when the address expires</td><td class="no">Can go on for years</td></tr>
+          <tr><th scope="row">Ready in</th><td class="yes">1 second</td><td class="no">Varies by provider</td></tr>
+          <tr><th scope="row">Spam later</th><td class="yes">Stops when the address expires</td><td class="no">Can continue while the account exists</td></tr>
           <tr><th scope="row">Receive OTP codes</th><td class="yes">Yes, with one-tap copy</td><td>Yes</td></tr>
           <tr><th scope="row">Send email</th><td class="no">No, receive only</td><td class="yes">Yes</td></tr>
           <tr><th scope="row">Account recovery</th><td class="no">Not suitable</td><td class="yes">Yes</td></tr>
