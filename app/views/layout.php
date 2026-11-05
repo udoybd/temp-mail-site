@@ -2,7 +2,7 @@
 /** @var string $content @var string $title @var string $description @var string $site @var string $siteUrl @var string $path @var array $cs */
 $fullTitle = !empty($home) ? $title : $site . ' | ' . $title;
 $canonical = $siteUrl . ($path === '/' ? '' : $path);
-$v = '9';
+$v = '10';
 $nav = ['/' => 'Home', '/features' => 'Features', '/faq' => 'FAQ', '/blog' => 'Blog', '/contact' => 'Contact'];
 $isOn = fn (string $href) => $href === '/' ? $path === '/' : ($path === $href || str_starts_with($path, $href . '/'));
 $logo = fn (string $id) => '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><defs><linearGradient id="' . $id . '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b8df6"/><stop offset="1" stop-color="#1f5fe0"/></linearGradient></defs><rect width="40" height="32" rx="7" fill="url(#' . $id . ')"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';

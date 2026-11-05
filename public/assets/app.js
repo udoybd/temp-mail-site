@@ -284,7 +284,7 @@
     $('btn-refresh').onclick = () => refresh(false).then(() => toast('Inbox refreshed'));
     $('btn-change').onclick = () => { const f = $('custom-form'); f.hidden = !f.hidden; if (!f.hidden) f.elements.name.focus(); };
     $('btn-delete').onclick = async () => {
-      if (!state.current || !window.confirm('Delete ' + state.current.address + ' and all its email?')) return;
+      if (!state.current) return;
       try {
         await api('DELETE', '/api/mailboxes/' + state.current.id);
         state.boxes = state.boxes.filter((b) => b.id !== state.current.id);
