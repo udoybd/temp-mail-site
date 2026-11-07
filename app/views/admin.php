@@ -11,7 +11,7 @@ $size = function (int $bytes): string {
     }
     return '';
 };
-$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
+$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'code' => 'Code', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
 $hidden = fn (string $k, $v) => '<input type="hidden" name="' . $e($k) . '" value="' . $e((string) $v) . '">';
 $logoSvg = '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><rect width="40" height="32" rx="7" fill="#2f80ed"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 $form = fn (string $action, string $label, string $domain = '', string $class = 'btn btn-sm') =>
@@ -72,7 +72,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     <h2>Right now</h2>
     <div class="tiles">
       <div class="tile"><div class="k">Live addresses</div><div class="v"><?= $n($live['mailboxes']) ?></div></div>
-      <div class="tile"><div class="k">Emails stored</div><div class="v"><?= $n($live['emails']) ?></div><div class="s">kept 3 hours each</div></div>
+      <div class="tile"><div class="k">Emails stored</div><div class="v"><?= $n($live['emails']) ?></div><div class="s">kept up to 24 hours</div></div>
       <div class="tile"><div class="k">Visitors (accounts)</div><div class="v"><?= $n($live['accounts']) ?></div><div class="s"><?= $n($live['online']) ?> active in last 10 min</div></div>
       <div class="tile"><div class="k">Storage used</div><div class="v"><?= $size($disk) ?></div></div>
     </div>
@@ -130,6 +130,16 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
   <?php elseif ($tab === 'blog'): ?>
     <?php if ($post === null): ?>
       <div class="a-bar"><h2>Blog posts</h2><a class="btn btn-primary" href="/admin?tab=blog&amp;edit=new">+ New post</a></div>
+      <form method="post" class="box" style="margin-bottom:16px">
+        <?= $hidden('csrf', $csrf) . $hidden('action', 'drip-posts') . $hidden('tab', 'blog') ?>
+        <strong>Schedule many posts</strong>
+        <p class="muted small">Write all your posts and save them as <b>Draft</b>. Then press the button: every draft is published one by one, in the order you wrote them. You can also set a future date on a single post.</p>
+        <div class="grid-2">
+          <label>First post goes live<input type="datetime-local" name="start" value="<?= $e((new DateTimeImmutable('@' . (time() + 3600)))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
+          <label>Then one post every<span style="display:flex;gap:8px"><input type="number" name="every" value="1" min="1" max="90" style="width:90px"><select name="unit"><option value="days">day(s)</option><option value="hours">hour(s)</option></select></span></label>
+        </div>
+        <button class="btn btn-primary" style="margin-top:10px">Schedule all drafts</button>
+      </form>
       <div class="tbl-wrap"><table>
         <tr><th>Title</th><th>Status</th><th>Date</th><th>Updated</th><th></th></tr>
         <?php foreach ($posts as $p): ?>
@@ -156,7 +166,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         <label>Link (slug) <span class="muted small">bengal.email/blog/<b id="slug-preview"><?= $e($post['slug']) ?></b></span><input name="slug" id="f-slug" value="<?= $e($post['slug']) ?>" placeholder="made from the title if empty" maxlength="120" data-auto="<?= $post['id'] ? '0' : '1' ?>"></label>
         <label>Short description <span class="muted small">(shown on the blog list and in Google)</span><input name="description" value="<?= $e($post['description']) ?>" maxlength="300"></label>
         <div class="grid-2">
-          <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (visible)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
+          <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (a future date = scheduled)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
           <label>Publish date<input type="datetime-local" name="date" value="<?= $e((new DateTimeImmutable('@' . (int) $post['published_at']))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
         </div>
         <div class="cover-row">
@@ -243,10 +253,23 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     <form method="post" class="box">
       <?= $hidden('csrf', $csrf) . $hidden('action', 'save-settings') . $hidden('tab', 'settings') ?>
       <?php foreach (Tms\Content::SETTINGS as $key => [$label]): ?>
+        <?php if (in_array($key, ['header_code', 'footer_code'], true)) { continue; } ?>
         <?php if ($key === 'social_facebook'): ?><h3>Follow Us links <span class="muted small">(leave empty to hide an icon)</span></h3><?php endif; ?>
         <label><?= $e($label) ?><input name="<?= $e($key) ?>" value="<?= $e($settings[$key]) ?>" maxlength="1000"<?= str_starts_with($key, 'social_') ? ' type="url" placeholder="https://"' : '' ?>></label>
       <?php endforeach; ?>
       <button class="btn btn-primary">Save settings</button>
+    </form>
+
+  <?php elseif ($tab === 'code'): ?>
+    <h2>Custom code</h2>
+    <p class="muted small">Paste ads, analytics or site-verification code here. It is added exactly as you paste it, on every public page.</p>
+    <form method="post" class="box">
+      <?= $hidden('csrf', $csrf) . $hidden('action', 'save-code') . $hidden('tab', 'code') ?>
+      <label>Header code <span class="muted small">(added just before &lt;/head&gt;)</span>
+        <textarea name="header_code" rows="8" maxlength="20000" spellcheck="false" style="font-family:monospace;width:100%"><?= $e($settings['header_code']) ?></textarea></label>
+      <label>Footer code <span class="muted small">(added just before &lt;/body&gt;)</span>
+        <textarea name="footer_code" rows="8" maxlength="20000" spellcheck="false" style="font-family:monospace;width:100%"><?= $e($settings['footer_code']) ?></textarea></label>
+      <button class="btn btn-primary">Save code</button>
     </form>
 
   <?php elseif ($tab === 'domains'): ?>
@@ -269,7 +292,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
           <td style="white-space:nowrap">
             <?php if ($d['name'] !== $default): ?><?= $form('default-domain', 'Make default', $d['name']) ?><?php endif; ?>
             <?= $form('toggle-domain', $d['active'] ? 'Pause' : 'Turn on', $d['name']) ?>
-            <?php if (!$d['live']): ?><?= $form('remove-domain', 'Remove', $d['name'], 'btn btn-sm danger') ?><?php endif; ?>
+            <form method="post" class="inline" onsubmit="return confirm('Delete <?= $e($d['name']) ?> for good? Its live addresses stop working.')"><input type="hidden" name="csrf" value="<?= $e($csrf) ?>"><input type="hidden" name="action" value="remove-domain"><input type="hidden" name="domain" value="<?= $e($d['name']) ?>"><button class="btn btn-sm danger">Delete</button></form>
           </td>
         </tr>
       <?php endforeach; ?>
@@ -311,7 +334,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <button class="btn btn-primary">Search</button>
       <?php if ($q !== ''): ?><a class="btn" href="/admin?tab=mail">Clear</a><?php endif; ?>
     </form>
-    <p class="muted small">Every email and address is kept here for you, even after the visitor deletes it or it expires. Visitors only see email for 3 hours.</p>
+    <p class="muted small">Every email record (sender address, time, size) is kept here for you, even after the visitor deletes it or it expires. The subject, text and code of each email are erased automatically 7 days after it arrives. Visitors only see email for up to 24 hours.</p>
 
     <h2>All emails received <span class="muted small">(<?= $n($emailTotal) ?>)</span></h2>
     <div class="tbl-wrap"><table>

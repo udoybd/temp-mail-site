@@ -2,7 +2,7 @@
 /** @var string $content @var string $title @var string $description @var string $site @var string $siteUrl @var string $path @var array $cs */
 $fullTitle = !empty($home) ? $title : $site . ' | ' . $title;
 $canonical = $siteUrl . ($path === '/' ? '' : $path);
-$v = '7';
+$v = '20';
 $nav = ['/' => 'Home', '/features' => 'Features', '/faq' => 'FAQ', '/blog' => 'Blog', '/contact' => 'Contact'];
 $isOn = fn (string $href) => $href === '/' ? $path === '/' : ($path === $href || str_starts_with($path, $href . '/'));
 $logo = fn (string $id) => '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><defs><linearGradient id="' . $id . '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b8df6"/><stop offset="1" stop-color="#1f5fe0"/></linearGradient></defs><rect width="40" height="32" rx="7" fill="url(#' . $id . ')"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -50,6 +50,8 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="/assets/app.css?v=<?= $v ?>">
+<?php if (!empty($home)): ?><link rel="stylesheet" href="/assets/home.css?v=<?= $v ?>">
+<?php endif; ?>
 <script>try{if(localStorage.getItem('tms_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
 <?php if ($adsense !== ''): ?>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= $e($adsense) ?>" crossorigin="anonymous"></script>
@@ -58,6 +60,7 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <script async src="https://www.googletagmanager.com/gtag/js?id=<?= $e($analytics) ?>"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','<?= $e($analytics) ?>');</script>
 <?php endif; ?>
+<?= $cs['header_code'] ?? '' ?>
 </head>
 <body>
 <div class="bg-waves" aria-hidden="true"></div>
@@ -151,5 +154,6 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <div id="google_translate_element" hidden></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script src="/assets/app.js?v=<?= $v ?>" defer></script>
+<?= $cs['footer_code'] ?? '' ?>
 </body>
 </html>

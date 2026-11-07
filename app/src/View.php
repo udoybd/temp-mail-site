@@ -14,8 +14,8 @@ final class View
     {
         if ($path === '/') {
             self::render('home', [
-                'title' => 'Bengal.email: Free Temporary Email Address Generator',
-                'description' => 'Get a free temporary email address instantly. No sign-up, live inbox, one-tap verification codes, auto-expiring mailboxes.',
+                'title' => 'Temp Mail – 24 Hour Temporary Email Address | Bengal.email',
+                'description' => 'Get a free temp mail address in one click. No sign-up. Live inbox, one-tap OTP copy, custom names and 24-hour addresses. Bengal.email keeps spam out of your real inbox.',
                 'home' => true,
             ]);
             return;

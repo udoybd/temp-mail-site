@@ -14,7 +14,7 @@ final class Admin
 {
     private const COOKIE = 'tms_admin';
     private const SESSION_TTL = 7 * 86400;
-    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'domains', 'mail', 'logs'];
+    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'code', 'domains', 'mail', 'logs'];
 
     public static function handle(string $method, string $path): void
     {
@@ -260,10 +260,6 @@ final class Admin
                 return ['domains', $domain . ' is now the default for new addresses.', null];
 
             case 'remove-domain':
-                $live = (int) Db::one('SELECT COUNT(*) AS n FROM mailboxes WHERE address LIKE ? AND expires_at > ?', ['%@' . $domain, time()])['n'];
-                if ($live > 0) {
-                    return ['domains', null, $domain . ' still has ' . $live . ' live addresses. Pause it instead; remove it after they expire.'];
-                }
                 if (Db::one('SELECT active FROM domains WHERE name = ?', [$domain])['active'] ?? 0) {
                     if (count(Mailbox::domains()) <= 1) {
                         return ['domains', null, 'Keep at least one domain switched on.'];
@@ -331,6 +327,25 @@ final class Admin
                 $msg = $status === 'published' ? 'Post saved and published.' : 'Post saved as a draft (not visible on the site).';
                 return ['blog', $msg, null, ['edit' => $id]];
 
+            case 'drip-posts':
+                $tz = new \DateTimeZone((string) (Config::get('timezone') ?: 'UTC'));
+                try {
+                    $start = (new \DateTimeImmutable($str('start', 40) ?: 'now', $tz))->getTimestamp();
+                } catch (\Exception $e) {
+                    $start = $now;
+                }
+                $every = max(1, min(90, (int) ($_POST['every'] ?? 1)));
+                $step = $every * (($_POST['unit'] ?? 'days') === 'hours' ? 3600 : 86400);
+                $drafts = Db::all("SELECT id FROM posts WHERE status = 'draft' ORDER BY id ASC");
+                if (!$drafts) {
+                    return ['blog', null, 'There are no drafts to schedule. Save posts as Draft first.'];
+                }
+                foreach ($drafts as $i => $d) {
+                    Db::run("UPDATE posts SET status = 'published', published_at = ?, updated_at = ? WHERE id = ?", [$start + $i * $step, $now, (int) $d['id']]);
+                }
+                Log::write('admin', 'scheduled ' . count($drafts) . ' drafts, one every ' . $every . ' ' . ($step % 86400 === 0 ? 'day(s)' : 'hour(s)'));
+                return ['blog', count($drafts) . ' draft post(s) scheduled. They appear on the site one by one, starting at the time you chose.', null];
+
             case 'delete-post':
                 $row = Db::one('SELECT slug FROM posts WHERE id = ?', [(int) ($_POST['id'] ?? 0)]);
                 if ($row) {
@@ -384,8 +399,18 @@ final class Admin
                 Db::run('UPDATE contact_messages SET seen = 1');
                 return ['messages', 'All messages marked as read.', null];
 
+            case 'save-code':
+                foreach (['header_code', 'footer_code'] as $key) {
+                    Db::setSetting('content_' . $key, $str($key, 20000));
+                }
+                Log::write('admin', 'saved custom header/footer code');
+                return ['code', 'Code saved. It is now on every page.', null];
+
             case 'save-settings':
                 foreach (array_keys(Content::SETTINGS) as $key) {
+                    if (in_array($key, ['header_code', 'footer_code'], true)) {
+                        continue;
+                    }
                     $value = $str($key, 1000);
                     if (str_starts_with($key, 'social_') && $value !== '' && !preg_match('#^https?://#i', $value)) {
                         return ['settings', null, 'Links must start with https:// (check ' . Content::SETTINGS[$key][0] . ').'];
@@ -466,7 +491,7 @@ final class Admin
         if ($tab === 'messages') {
             return ['messages' => Db::all('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 200')];
         }
-        if ($tab === 'settings') {
+        if ($tab === 'settings' || $tab === 'code') {
             return ['settings' => Content::settings()];
         }
         if ($tab === 'domains') {

@@ -23,7 +23,7 @@ final class Config
                 'webmaster', 'hostmaster', 'noreply', 'no-reply', 'mail', 'security', 'contact', 'help'],
             'support_email' => 'support@bengal.email',
             'allow_custom_names' => true,
-            'email_ttl' => 3 * 3600,            // each email is deleted 3 hours after it arrives
+            'email_ttl' => 24 * 3600,           // each email is deleted 24 hours after it arrives (or when its address expires)
             // Address lifetime is fixed at 24 hours in Mailbox::LIFETIME.
             'idle_account_ttl' => 30 * 86400,
             'mailboxes_per_ip_per_day' => 30,

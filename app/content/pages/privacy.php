@@ -11,10 +11,10 @@
 <p>We do not ask for or store your name, phone number or real email address.</p>
 <h2>How long we keep it</h2>
 <ul>
-<li>Emails: 3 hours after they arrive.</li>
+<li>Emails: when you delete them, or when the address expires (24 hours at most).</li>
 <li>Mailboxes: 24 hours from when they are made.</li>
 <li>Accounts with no mailboxes that are unused for 30 days are deleted.</li>
-<li>When an address is deleted we keep the address itself (not its email) so it is never given to someone else.</li>
+<li>When an address is deleted or expires, its emails are deleted too and the name becomes free for anyone to use again. We keep only a private record of the address name and its times, with no email content.</li>
 </ul>
 <h2>Third parties</h2>
 <ul>
