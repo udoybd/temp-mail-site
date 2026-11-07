@@ -183,11 +183,16 @@ SQL);
         if ($ext === null) {
             throw new UserError('Only JPG, PNG, GIF or WebP images can be uploaded.');
         }
-        $dir = TMS_ROOT . '/public/uploads/' . gmdate('Y-m');
+        // Save inside the folder the web server really serves (public/ in git, public_html on the live host).
+        $web = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+        if ($web === '' || !is_file($web . '/index.php')) {
+            $web = TMS_ROOT . '/public';
+        }
+        $dir = $web . '/uploads/' . gmdate('Y-m');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
             throw new UserError('Could not create the uploads folder on the server.');
         }
-        $guard = TMS_ROOT . '/public/uploads/.htaccess';
+        $guard = $web . '/uploads/.htaccess';
         if (!is_file($guard)) {
             @file_put_contents($guard, "Options -Indexes\n<FilesMatch \"\\.(php|phtml|phar|pl|py|cgi|sh)$\">\nRequire all denied\n</FilesMatch>\n");
         }

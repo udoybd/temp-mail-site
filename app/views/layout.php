@@ -154,6 +154,7 @@ $socialOn = array_filter($social, fn ($k) => trim($cs[$k] ?? '') !== '', ARRAY_F
 <div id="google_translate_element" hidden></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script src="/assets/app.js?v=<?= $v ?>" defer></script>
+<script src="/assets/visit.js?v=1" defer></script>
 <?= $cs['footer_code'] ?? '' ?>
 </body>
 </html>

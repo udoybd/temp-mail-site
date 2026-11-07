@@ -66,6 +66,9 @@ final class View
 
     public static function render(string $view, array $vars): void
     {
+        if ($view !== 'pages/not-found') {
+            Visitors::track();
+        }
         $vars['site'] = (string) Config::get('site_name');
         $vars['siteUrl'] = rtrim((string) Config::get('site_url'), '/');
         $vars['adsense'] = (string) Config::get('adsense_client');

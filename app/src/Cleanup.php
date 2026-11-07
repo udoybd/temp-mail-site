@@ -33,6 +33,7 @@ final class Cleanup
             "UPDATE mail_log SET text_body = '', subject = '', otp = NULL, from_name = '' WHERE received_at < ? AND (text_body != '' OR subject != '' OR otp IS NOT NULL OR from_name != '')",
             [$now - 7 * 86400]
         );
+        Visitors::purge();
         Db::run('DELETE FROM rate_limits WHERE expires_at < ?', [$now]);
         Db::run('DELETE FROM link_codes WHERE expires_at < ?', [$now]);
         return $done;

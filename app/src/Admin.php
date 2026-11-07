@@ -14,7 +14,7 @@ final class Admin
 {
     private const COOKIE = 'tms_admin';
     private const SESSION_TTL = 7 * 86400;
-    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'code', 'domains', 'mail', 'logs'];
+    private const TABS = ['dashboard', 'blog', 'pages', 'faq', 'messages', 'settings', 'code', 'domains', 'mail', 'visitors', 'logs'];
 
     public static function handle(string $method, string $path): void
     {
@@ -54,6 +54,11 @@ final class Admin
                 }
             }
             self::page('login', ['error' => $error]);
+            return;
+        }
+
+        if ($method === 'GET' && ($_GET['tab'] ?? '') === 'visitors' && isset($_GET['online'])) {
+            Http::json(['online' => Visitors::online()]);
             return;
         }
 
@@ -302,13 +307,32 @@ final class Admin
                 if ($clash) {
                     return ['blog', null, 'Another post already uses the link /blog/' . $slug . '. Change the link (slug).', ['edit' => $id ?: 'new']];
                 }
-                $status = ($_POST['status'] ?? '') === 'published' ? 'published' : 'draft';
+                $mode = (string) ($_POST['status'] ?? 'draft');
+                $mode = $mode === 'published' ? 'now' : (in_array($mode, ['now', 'schedule', 'draft'], true) ? $mode : 'draft');
+                $old = $id > 0 ? Db::one('SELECT status, published_at FROM posts WHERE id = ?', [$id]) : null;
                 $tz = new \DateTimeZone((string) (Config::get('timezone') ?: 'UTC'));
-                $date = $str('date', 40);
-                try {
-                    $at = $date !== '' ? (new \DateTimeImmutable($date, $tz))->getTimestamp() : $now;
-                } catch (\Exception $e) {
-                    $at = $now;
+                $back = ['edit' => $id ?: 'new'];
+                if ($mode === 'draft') {
+                    $status = 'draft';
+                    $at = $old ? (int) $old['published_at'] : $now;
+                } elseif ($mode === 'now') {
+                    // Publish Now goes live at once. An already live post keeps its original date.
+                    $status = 'published';
+                    $at = ($old && $old['status'] === 'published' && (int) $old['published_at'] <= $now) ? (int) $old['published_at'] : $now;
+                } else {
+                    $status = 'published';
+                    if (!empty($_POST['auto_schedule'])) {
+                        $at = self::nextSlot($tz);
+                    } else {
+                        try {
+                            $at = (new \DateTimeImmutable($str('date', 40), $tz))->getTimestamp();
+                        } catch (\Exception $e) {
+                            $at = 0;
+                        }
+                        if ($at <= $now) {
+                            return ['blog', null, 'Schedule needs a date and time in the future. Pick one, or tick "Auto".', $back];
+                        }
+                    }
                 }
                 $cover = $str('cover', 500);
                 if (!empty($_POST['remove_cover'])) {
@@ -323,8 +347,9 @@ final class Admin
                 } else {
                     $id = Db::insert('INSERT INTO posts (slug, title, description, body, cover, status, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', $values);
                 }
-                Log::write('admin', 'saved post ' . $slug . ' (' . $status . ')');
-                $msg = $status === 'published' ? 'Post saved and published.' : 'Post saved as a draft (not visible on the site).';
+                Log::write('admin', 'saved post ' . $slug . ' (' . $mode . ')');
+                $msg = $mode === 'draft' ? 'Post saved as a draft (not visible on the site).'
+                    : ($mode === 'schedule' ? 'Post scheduled for ' . (new \DateTimeImmutable('@' . $at))->setTimezone($tz)->format('d M Y, h:i A') . '. It goes live by itself.' : 'Post published.');
                 return ['blog', $msg, null, ['edit' => $id]];
 
             case 'drip-posts':
@@ -423,6 +448,14 @@ final class Admin
         return null;
     }
 
+    /** Auto schedule: 09:00 the day after the last post that is already waiting (or tomorrow if none). */
+    private static function nextSlot(\DateTimeZone $tz): int
+    {
+        $last = (int) (Db::one("SELECT MAX(published_at) AS m FROM posts WHERE status = 'published' AND published_at > ?", [time()])['m'] ?? 0);
+        $base = (new \DateTimeImmutable('@' . ($last ?: time())))->setTimezone($tz)->modify('+1 day');
+        return $base->setTime(9, 0)->getTimestamp();
+    }
+
     // ---- data -------------------------------------------------------------
 
     private static function data(string $tab): array
@@ -507,6 +540,54 @@ final class Admin
                 'secret' => (string) Config::get('ingest_secret'),
                 'siteUrl' => rtrim((string) Config::get('site_url'), '/'),
                 'pipe' => TMS_ROOT . '/bin/pipe.php',
+            ];
+        }
+        if ($tab === 'visitors') {
+            $days = in_array((int) ($_GET['days'] ?? 30), [1, 7, 30], true) ? (int) ($_GET['days'] ?? 30) : 30;
+            $f = [
+                'q' => trim((string) ($_GET['q'] ?? '')), 'days' => $days,
+                'device' => in_array($_GET['device'] ?? '', ['Desktop', 'Mobile', 'Tablet'], true) ? (string) $_GET['device'] : '',
+                'browser' => mb_substr((string) ($_GET['browser'] ?? ''), 0, 40), 'country' => preg_match('/^[A-Z]{2}$/', (string) ($_GET['country'] ?? '')) ? (string) $_GET['country'] : '',
+                'src' => in_array($_GET['src'] ?? '', ['direct', 'ref'], true) ? (string) $_GET['src'] : '', 'mails' => !empty($_GET['mails']),
+            ];
+            $where = ['first_at >= ?'];
+            $args = [$now - $days * 86400];
+            if ($f['q'] !== '') {
+                $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $f['q']) . '%';
+                $where[] = "(ip LIKE ? ESCAPE '\\' OR browser LIKE ? ESCAPE '\\' OR country LIKE ? ESCAPE '\\' OR ref LIKE ? ESCAPE '\\' OR device LIKE ? ESCAPE '\\')";
+                array_push($args, $like, $like, $like, $like, $like);
+            }
+            if ($f['device'] !== '') {
+                $where[] = 'device = ?';
+                $args[] = $f['device'];
+            }
+            if ($f['browser'] !== '') {
+                $where[] = 'browser = ?';
+                $args[] = $f['browser'];
+            }
+            if ($f['country'] !== '') {
+                $where[] = 'country = ?';
+                $args[] = $f['country'];
+            }
+            if ($f['src'] === 'direct') {
+                $where[] = "ref = ''";
+            } elseif ($f['src'] === 'ref') {
+                $where[] = "ref != ''";
+            }
+            if ($f['mails']) {
+                $where[] = 'mails > 0';
+            }
+            $w = 'WHERE ' . implode(' AND ', $where);
+            $per = 50;
+            $vp = max(1, (int) ($_GET['vp'] ?? 1));
+            return [
+                'f' => $f, 'vp' => $vp, 'per' => $per,
+                'online' => Visitors::online(),
+                'total' => (int) Db::one('SELECT COUNT(*) AS n FROM visits ' . $w, $args)['n'],
+                'sum' => Db::one('SELECT COALESCE(SUM(mails), 0) AS mails, COUNT(DISTINCT ip) AS ips FROM visits ' . $w, $args),
+                'rows' => Db::all('SELECT * FROM visits ' . $w . ' ORDER BY first_at DESC, id DESC LIMIT ' . $per . ' OFFSET ' . (($vp - 1) * $per), $args),
+                'browsers' => array_column(Db::all("SELECT DISTINCT browser FROM visits WHERE browser != '' ORDER BY browser"), 'browser'),
+                'countries' => array_column(Db::all("SELECT DISTINCT country FROM visits WHERE country != '' ORDER BY country"), 'country'),
             ];
         }
         if ($tab === 'mail') {

@@ -7,6 +7,7 @@
 <li><strong>Email sent to those addresses</strong>, including attachments, until it expires.</li>
 <li><strong>A recovery code</strong>, only if you create one. We store a one-way hash, not the code itself.</li>
 <li><strong>Your IP address</strong>, in hashed form, to limit how many new addresses one network can make per day.</li>
+<li><strong>Visit statistics, for 30 days.</strong> For each visit we keep your IP address, browser, device type, country, the site you came from, how long you stayed and how many addresses you made. We use it to see how many people use the site and to stop abuse. It is deleted automatically after 30 days and never sold or shared.</li>
 </ul>
 <p>We do not ask for or store your name, phone number or real email address.</p>
 <h2>How long we keep it</h2>

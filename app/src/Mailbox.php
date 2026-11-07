@@ -119,6 +119,7 @@ final class Mailbox
         );
         Db::run('INSERT INTO mailbox_log (address, account_id, created_at) VALUES (?, ?, ?)', [$address, $accountId, $now]);
         Stats::bump('mailboxes');
+        Visitors::bumpMail();
         return ['id' => $id, 'address' => $address, 'created_at' => $now, 'expires_at' => $now + $ttl, 'unread' => 0];
     }
 

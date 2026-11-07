@@ -131,6 +131,34 @@ final class Db
             $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['When an address is deleted we keep the address itself (not its email) so it is never given to someone else.', 'When an address is deleted or expires, its emails are deleted too and the name becomes free for anyone to use again. We keep only a private record of the address name and its times, with no email content.']);
             $pdo->exec('PRAGMA user_version = 11');
         }
+        if ($version < 12) {
+            // Visitor log for /admin → Visitors (kept 30 days).
+            $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vid TEXT NOT NULL,
+    ip TEXT NOT NULL,
+    browser TEXT NOT NULL DEFAULT '',
+    bver TEXT NOT NULL DEFAULT '',
+    device TEXT NOT NULL DEFAULT '',
+    country TEXT NOT NULL DEFAULT '',
+    ref TEXT NOT NULL DEFAULT '',
+    first_at INTEGER NOT NULL,
+    last_at INTEGER NOT NULL,
+    pages INTEGER NOT NULL DEFAULT 1,
+    mails INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS visits_vid ON visits(vid);
+CREATE INDEX IF NOT EXISTS visits_first ON visits(first_at);
+CREATE INDEX IF NOT EXISTS visits_last ON visits(last_at);
+SQL);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?) WHERE slug = ?')->execute([
+                '<li><strong>Your IP address</strong>, in hashed form, to limit how many new addresses one network can make per day.</li>',
+                '<li><strong>Your IP address</strong>, in hashed form, to limit how many new addresses one network can make per day.</li>' . "\n" . '<li><strong>Visit statistics, for 30 days.</strong> For each visit we keep your IP address, browser, device type, country, the site you came from, how long you stayed and how many addresses you made. We use it to see how many people use the site and to stop abuse. It is deleted automatically after 30 days and never sold or shared.</li>',
+                'privacy',
+            ]);
+            $pdo->exec('PRAGMA user_version = 12');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
