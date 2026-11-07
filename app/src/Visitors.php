@@ -72,8 +72,8 @@ final class Visitors
                 $ref = '';
             }
             Db::run(
-                'INSERT INTO visits (vid, ip, browser, bver, device, country, ref, first_at, last_at, pages, mails) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)',
-                [$vid, Http::ip(), $browser, $ver, $device, $cc, mb_substr($ref, 0, 300), $now, $now]
+                'INSERT INTO visits (vid, ip, browser, bver, device, country, ref, landing, first_at, last_at, pages, mails) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)',
+                [$vid, Http::ip(), $browser, $ver, $device, $cc, mb_substr($ref, 0, 300), mb_substr('/' . trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/'), 0, 200), $now, $now]
             );
             setcookie(self::COOKIE, $vid, ['path' => '/', 'secure' => Http::isHttps(), 'httponly' => true, 'samesite' => 'Lax']);
             $_COOKIE[self::COOKIE] = $vid;

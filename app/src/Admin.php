@@ -341,11 +341,11 @@ final class Admin
                 if (($_FILES['cover_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
                     $cover = Content::saveImage($_FILES['cover_file']);
                 }
-                $values = [$slug, $title, $str('description', 300), (string) ($_POST['body'] ?? ''), $cover, $status, $at, $now];
+                $values = [$slug, $title, $str('description', 300), (string) ($_POST['body'] ?? ''), $cover, $str('cover_alt', 200), $status, $at, $now];
                 if ($id > 0 && Db::one('SELECT 1 FROM posts WHERE id = ?', [$id])) {
-                    Db::run('UPDATE posts SET slug = ?, title = ?, description = ?, body = ?, cover = ?, status = ?, published_at = ?, updated_at = ? WHERE id = ?', [...$values, $id]);
+                    Db::run('UPDATE posts SET slug = ?, title = ?, description = ?, body = ?, cover = ?, cover_alt = ?, status = ?, published_at = ?, updated_at = ? WHERE id = ?', [...$values, $id]);
                 } else {
-                    $id = Db::insert('INSERT INTO posts (slug, title, description, body, cover, status, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', $values);
+                    $id = Db::insert('INSERT INTO posts (slug, title, description, body, cover, cover_alt, status, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', $values);
                 }
                 Log::write('admin', 'saved post ' . $slug . ' (' . $mode . ')');
                 $msg = $mode === 'draft' ? 'Post saved as a draft (not visible on the site).'
@@ -492,13 +492,13 @@ final class Admin
             $edit = (string) ($_GET['edit'] ?? '');
             $post = null;
             if ($edit === 'new') {
-                $post = ['id' => 0, 'slug' => '', 'title' => '', 'description' => '', 'body' => '', 'cover' => '', 'status' => 'draft', 'published_at' => $now];
+                $post = ['id' => 0, 'slug' => '', 'title' => '', 'description' => '', 'body' => '', 'cover' => '', 'cover_alt' => '', 'status' => 'draft', 'published_at' => $now];
             } elseif ($edit !== '') {
                 $post = Db::one('SELECT * FROM posts WHERE id = ?', [(int) $edit]);
             }
             if ($post !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Keep what was typed when saving failed.
-                foreach (['title', 'slug', 'description', 'body', 'cover', 'status'] as $k) {
+                foreach (['title', 'slug', 'description', 'body', 'cover', 'cover_alt', 'status'] as $k) {
                     $post[$k] = (string) ($_POST[$k] ?? $post[$k]);
                 }
             }
@@ -548,14 +548,14 @@ final class Admin
                 'q' => trim((string) ($_GET['q'] ?? '')), 'days' => $days,
                 'device' => in_array($_GET['device'] ?? '', ['Desktop', 'Mobile', 'Tablet'], true) ? (string) $_GET['device'] : '',
                 'browser' => mb_substr((string) ($_GET['browser'] ?? ''), 0, 40), 'country' => preg_match('/^[A-Z]{2}$/', (string) ($_GET['country'] ?? '')) ? (string) $_GET['country'] : '',
-                'src' => in_array($_GET['src'] ?? '', ['direct', 'ref'], true) ? (string) $_GET['src'] : '', 'mails' => !empty($_GET['mails']),
+                'src' => in_array($_GET['src'] ?? '', ['direct', 'ref'], true) ? (string) $_GET['src'] : '', 'landing' => in_array($_GET['landing'] ?? '', ['home', 'blog', 'other'], true) ? (string) $_GET['landing'] : '', 'mails' => !empty($_GET['mails']),
             ];
             $where = ['first_at >= ?'];
             $args = [$now - $days * 86400];
             if ($f['q'] !== '') {
                 $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $f['q']) . '%';
-                $where[] = "(ip LIKE ? ESCAPE '\\' OR browser LIKE ? ESCAPE '\\' OR country LIKE ? ESCAPE '\\' OR ref LIKE ? ESCAPE '\\' OR device LIKE ? ESCAPE '\\')";
-                array_push($args, $like, $like, $like, $like, $like);
+                $where[] = "(ip LIKE ? ESCAPE '\\' OR landing LIKE ? ESCAPE '\\' OR browser LIKE ? ESCAPE '\\' OR country LIKE ? ESCAPE '\\' OR ref LIKE ? ESCAPE '\\' OR device LIKE ? ESCAPE '\\')";
+                array_push($args, $like, $like, $like, $like, $like, $like);
             }
             if ($f['device'] !== '') {
                 $where[] = 'device = ?';
@@ -573,6 +573,13 @@ final class Admin
                 $where[] = "ref = ''";
             } elseif ($f['src'] === 'ref') {
                 $where[] = "ref != ''";
+            }
+            if ($f['landing'] === 'home') {
+                $where[] = "landing IN ('/', '')";
+            } elseif ($f['landing'] === 'blog') {
+                $where[] = "landing LIKE '/blog%'";
+            } elseif ($f['landing'] === 'other') {
+                $where[] = "landing NOT IN ('/', '') AND landing NOT LIKE '/blog%'";
             }
             if ($f['mails']) {
                 $where[] = 'mails > 0';

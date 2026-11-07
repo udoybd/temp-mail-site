@@ -188,6 +188,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         <div class="cover-row">
           <?php if ($post['cover'] !== ''): ?><img src="<?= $e($post['cover']) ?>" alt="" class="cover-thumb"><label class="check"><input type="checkbox" name="remove_cover" value="1"> Remove cover image</label><?php endif; ?>
           <label>Cover image <span class="muted small">(JPG/PNG/WebP, optional)</span><input type="file" name="cover_file" accept="image/*"></label>
+          <label style="flex:1;min-width:220px">Cover image Alt text <span class="muted small">(describe the picture, helps image ranking)</span><input name="cover_alt" value="<?= $e($post['cover_alt'] ?? '') ?>" maxlength="200" placeholder="e.g. Temporary email inbox on a phone"></label>
         </div>
         <?php $editorName = 'body'; $editorValue = $post['body']; require __DIR__ . '/admin-editor.php'; ?>
         <div class="a-bar"><button class="btn btn-primary" id="f-save">Save post</button></div>
@@ -422,7 +423,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         }
         return $s < 3600 ? intdiv($s, 60) . 'm ' . ($s % 60) . 's' : intdiv($s, 3600) . 'h ' . intdiv($s % 3600, 60) . 'm';
     };
-    $vq = fn (array $over) => '/admin?' . $e(http_build_query(array_merge(array_filter(['tab' => 'visitors', 'q' => $f['q'], 'days' => $f['days'] !== 30 ? $f['days'] : null, 'device' => $f['device'], 'browser' => $f['browser'], 'country' => $f['country'], 'src' => $f['src'], 'mails' => $f['mails'] ? 1 : null], fn ($v) => $v !== null && $v !== ''), $over)));
+    $vq = fn (array $over) => '/admin?' . $e(http_build_query(array_merge(array_filter(['tab' => 'visitors', 'q' => $f['q'], 'days' => $f['days'] !== 30 ? $f['days'] : null, 'device' => $f['device'], 'browser' => $f['browser'], 'country' => $f['country'], 'src' => $f['src'], 'landing' => $f['landing'], 'mails' => $f['mails'] ? 1 : null], fn ($v) => $v !== null && $v !== ''), $over)));
     ?>
     <div class="a-bar">
       <h2>Visitors</h2>
@@ -437,6 +438,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         <label>Browser<select name="browser"><option value="">All</option><?php foreach ($browsers as $b): ?><option<?= $f['browser'] === $b ? ' selected' : '' ?>><?= $e($b) ?></option><?php endforeach; ?></select></label>
         <label>Country<select name="country"><option value="">All</option><?php foreach ($countries as $c): ?><option value="<?= $e($c) ?>"<?= $f['country'] === $c ? ' selected' : '' ?>><?= $e($cname($c)) ?></option><?php endforeach; ?></select></label>
         <label>Came from<select name="src"><option value="">All</option><option value="direct"<?= $f['src'] === 'direct' ? ' selected' : '' ?>>Direct</option><option value="ref"<?= $f['src'] === 'ref' ? ' selected' : '' ?>>From another site</option></select></label>
+        <label>First page<select name="landing"><option value="">All</option><option value="home"<?= $f['landing'] === 'home' ? ' selected' : '' ?>>Home page</option><option value="blog"<?= $f['landing'] === 'blog' ? ' selected' : '' ?>>Blog (list or post)</option><option value="other"<?= $f['landing'] === 'other' ? ' selected' : '' ?>>Other pages</option></select></label>
         <label class="check" style="align-self:end;padding-bottom:12px"><input type="checkbox" name="mails" value="1"<?= $f['mails'] ? ' checked' : '' ?>> Made at least 1 mail</label>
       </div>
       <button class="btn btn-primary">Filter</button>
@@ -444,7 +446,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     </form>
     <p class="muted small">Newest visitor first. <?= $n($total) ?> visit(s), <?= $n($sum['ips']) ?> different IP(s), <?= $n($sum['mails']) ?> address(es) made. A visit ends after 30 minutes without activity. Data older than 30 days is deleted automatically. Country comes from Cloudflare.</p>
     <div class="tbl-wrap"><table>
-      <tr><th>IP</th><th>Browser</th><th>Device</th><th>Country</th><th>Time</th><th>Stayed</th><th class="num">Mails</th><th>Came from</th></tr>
+      <tr><th>IP</th><th>Browser</th><th>Device</th><th>Country</th><th>Time</th><th>Stayed</th><th class="num">Mails</th><th>Came from</th><th>First page</th></tr>
       <?php foreach ($rows as $r): ?>
         <tr>
           <td class="small"><a href="<?= $vq(['q' => $r['ip']]) ?>"><?= $e($r['ip']) ?></a></td>
@@ -455,9 +457,10 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
           <td class="small" style="white-space:nowrap"><?= $e($dur(max(0, (int) $r['last_at'] - (int) $r['first_at']))) ?><?= (int) $r['last_at'] > time() - 70 ? ' <span class="pill on">online</span>' : '' ?></td>
           <td class="num small"><?= $n($r['mails']) ?></td>
           <td class="small"><?php if ($r['ref'] === ''): ?>Direct<?php else: $h = preg_replace('/^www\./', '', (string) parse_url($r['ref'], PHP_URL_HOST)); ?><a href="<?= $e($r['ref']) ?>" target="_blank" rel="noopener nofollow" title="<?= $e($r['ref']) ?>"><?= $e($h) ?></a><?php endif; ?></td>
+          <td class="small"><?php $lp = (string) ($r['landing'] ?: '/'); ?><a href="<?= $e($lp) ?>" target="_blank" rel="noopener"><?= $lp === '/' ? 'Home' : $e($lp) ?></a></td>
         </tr>
       <?php endforeach; ?>
-      <?php if (!$rows): ?><tr><td colspan="8" class="muted">No visitors match.</td></tr><?php endif; ?>
+      <?php if (!$rows): ?><tr><td colspan="9" class="muted">No visitors match.</td></tr><?php endif; ?>
     </table></div>
     <?php $pages = max(1, (int) ceil($total / $per)); if ($pages > 1): ?>
       <div class="a-bar"><?= $vp > 1 ? '<a class="btn btn-sm" href="' . $vq(['vp' => $vp - 1]) . '">&larr; Newer</a>' : '' ?><span class="muted small">Page <?= $vp ?> of <?= $pages ?></span><?= $vp < $pages ? '<a class="btn btn-sm" href="' . $vq(['vp' => $vp + 1]) . '">Older &rarr;</a>' : '' ?></div>

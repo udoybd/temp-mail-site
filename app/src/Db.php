@@ -159,6 +159,12 @@ SQL);
             ]);
             $pdo->exec('PRAGMA user_version = 12');
         }
+        if ($version < 13) {
+            // First page a visitor opened, and alt text for the blog cover image.
+            $pdo->exec("ALTER TABLE visits ADD COLUMN landing TEXT NOT NULL DEFAULT ''");
+            $pdo->exec("ALTER TABLE posts ADD COLUMN cover_alt TEXT NOT NULL DEFAULT ''");
+            $pdo->exec('PRAGMA user_version = 13');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
