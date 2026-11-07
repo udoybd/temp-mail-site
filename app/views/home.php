@@ -14,7 +14,8 @@ $apps = [
 <section class="hero" id="inbox">
   <div class="wrap">
     <p class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4 13.5h7L10 22l10-12h-7l.5-8Z"/></svg><span><?= $e($cs['hero_badge']) ?></span></p>
-    <h1><?= $e($cs['hero_title']) ?></h1>
+    <h1><?= str_replace('Temp Mail', '<em>Temp Mail</em>', $e($cs['hero_title'])) ?></h1>
+    <p class="lead">Get a disposable email the moment this page opens. Sign up, grab a code and keep spam out of your inbox. No account, no password.</p>
     <?php if ($ticks): ?><ul class="ticks"><?php foreach ($ticks as $tick): ?><li><?= $check ?><?= $e($tick) ?></li><?php endforeach; ?></ul><?php endif; ?>
 
     <div class="app" id="app" data-poll="5">
@@ -22,7 +23,7 @@ $apps = [
         <div class="addr-head">
           <span class="dot live" aria-hidden="true"></span>
           <span class="addr-expiry" id="addr-expiry">Getting your address&hellip;</span>
-          <span class="live-pill" id="live-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.8"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live Inbox</span>
+          <span class="live-pill" id="live-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="w0" cx="12" cy="12" r="1.8"/><path class="w1" d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live Inbox</span>
         </div>
         <div class="addr-row">
           <label class="addr-field">
@@ -99,11 +100,13 @@ $apps = [
 
 <section class="perks" id="features">
   <div class="wrap perks-row">
-    <div class="perk"><span class="perk-icon pi-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.5 5.6v5.8c0 4.7 3.2 8.6 7.5 9.8 4.3-1.2 7.5-5.1 7.5-9.8V5.6L12 2.8Z"/><path d="m8.6 12 2.4 2.4 4.4-4.6"/></svg></span><h3>Keep Your Privacy</h3><p>Stay anonymous and protect your real email.</p></div>
+    <div class="perk"><span class="perk-icon pi-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.5 5.6v5.8c0 4.7 3.2 8.6 7.5 9.8 4.3-1.2 7.5-5.1 7.5-9.8V5.6L12 2.8Z"/><path d="m8.6 12 2.4 2.4 4.4-4.6"/></svg></span><h3>Keep Your Privacy</h3><p>Keep your real email address private.</p></div>
     <div class="perk"><span class="perk-icon pi-violet"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M13.5 2 4 13.5h7L10 22l10-12h-7l.5-8Z"/></svg></span><h3>Instant Access</h3><p>Get a temporary email address in one click.</p></div>
-    <div class="perk"><span class="perk-icon pi-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-2.6-3.6-4-5.6-4a4 4 0 0 0 0 8c2 0 3.6-1.4 5.6-4Zm0 0c2 2.6 3.6 4 5.6 4a4 4 0 0 0 0-8c-2 0-3.6 1.4-5.6 4Z"/></svg></span><h3>Unlimited Emails</h3><p>Generate as many emails as you need.</p></div>
-    <div class="perk"><span class="perk-icon pi-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l.8 13a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-13M10 10.5v6.5M14 10.5v6.5"/></svg></span><h3>Auto Delete</h3><p>Emails are automatically deleted after expiration.</p></div>
+    <div class="perk"><span class="perk-icon pi-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c-2-2.6-3.6-4-5.6-4a4 4 0 0 0 0 8c2 0 3.6-1.4 5.6-4Zm0 0c2 2.6 3.6 4 5.6 4a4 4 0 0 0 0-8c-2 0-3.6 1.4-5.6 4Z"/></svg></span><h3>Many Inboxes</h3><p>Keep up to 10 addresses at once.</p></div>
+    <div class="perk"><span class="perk-icon pi-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l.8 13a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-13M10 10.5v6.5M14 10.5v6.5"/></svg></span><h3>Auto Delete</h3><p>Addresses and their mail delete themselves.</p></div>
   </div>
 </section>
 
 <div class="wrap"><?= View::ad($adsense, $adSlot) ?></div>
+
+<?php require __DIR__ . '/home-more.php'; ?>

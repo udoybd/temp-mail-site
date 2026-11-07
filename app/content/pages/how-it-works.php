@@ -7,7 +7,7 @@
 <p>New email shows up in a few seconds without reloading. If the message has a verification code we show it as a button you can tap to copy. Confirmation links get an "Open" button too. You can read the email as HTML or plain text and download attachments.</p>
 <h2>How long does it last?</h2>
 <ul>
-<li>Each email is deleted <strong>3 hours</strong> after it arrives.</li>
+<li>Emails stay until you delete them or the address expires (up to <strong>24 hours</strong>).</li>
 <li>Each address works for <strong>24 hours</strong> from the moment it is made.</li>
 <li>Pressed <strong>Delete</strong>? The name is free at once, so you can make the same address again straight away.</li>
 <li>Switched without deleting? The old address stays yours for its 24 hours. Open it from <strong>Account</strong> or type the name under <strong>Change</strong>. Nobody else can take it until it expires.</li>

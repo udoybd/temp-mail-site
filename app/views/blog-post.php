@@ -1,7 +1,7 @@
 <article class="page"><div class="wrap narrow">
 <p class="post-meta"><a href="/blog">Blog</a> · <?= $e(date('j M Y', (int) $post['published_at'])) ?></p>
 <h1><?= $e($post['title']) ?></h1>
-<?php if ($post['cover'] !== ''): ?><img class="post-hero" src="<?= $e($post['cover']) ?>" alt=""><?php endif; ?>
+<?php if ($post['cover'] !== ''): ?><img class="post-hero" src="<?= $e($post['cover']) ?>" alt="<?= $e($post['cover_alt'] ?? '') ?>"><?php endif; ?>
 <div class="page-card prose">
 <?= $post['body'] ?>
 <?= Tms\View::ad($adsense, $adSlot) ?>

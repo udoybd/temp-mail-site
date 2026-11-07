@@ -9,7 +9,7 @@
 <div class="post-grid">
 <?php foreach ($posts as $post): ?>
   <a class="post-card" href="/blog/<?= $e($post['slug']) ?>">
-    <?php if ($post['cover'] !== ''): ?><img class="post-cover" src="<?= $e($post['cover']) ?>" alt="" loading="lazy"><?php else: ?><span class="post-cover post-cover-blank" aria-hidden="true"><svg viewBox="0 0 32 24"><rect width="32" height="24" rx="5" fill="currentColor"/><path d="M6.5 7 16 14l9.5-7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></span><?php endif; ?>
+    <?php if ($post['cover'] !== ''): ?><img class="post-cover" src="<?= $e($post['cover']) ?>" alt="<?= $e($post['cover_alt'] ?? '') ?>" loading="lazy"><?php else: ?><span class="post-cover post-cover-blank" aria-hidden="true"><svg viewBox="0 0 32 24"><rect width="32" height="24" rx="5" fill="currentColor"/><path d="M6.5 7 16 14l9.5-7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></span><?php endif; ?>
     <span class="post-body">
       <span class="post-meta"><?= $e(date('j M Y', (int) $post['published_at'])) ?></span>
       <h3><?= $e($post['title']) ?></h3>

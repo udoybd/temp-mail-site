@@ -26,13 +26,15 @@ final class Content
     /** Site-wide text and links editable under Admin → Settings. key => [label, default]. */
     public const SETTINGS = [
         'hero_badge' => ['Small line above the title', 'Instant inbox · Works on phone and desktop'],
-        'hero_title' => ['Home page title', 'Free Temporary Email Address'],
-        'hero_ticks' => ['Ticks under the title (comma separated)', 'No sign-up, Auto-expires, Free forever'],
+        'hero_title' => ['Home page title', 'Free Temp Mail: Temporary Email Address in One Click'],
+        'hero_ticks' => ['Ticks under the title (comma separated)', 'No sign-up, Lives 24 hours, Free to use'],
         'footer_text' => ['Footer text under the logo', 'Free temporary email service to keep your inbox clean and safe.'],
         'social_facebook' => ['Facebook page link', ''],
         'social_x' => ['X (Twitter) link', ''],
         'social_telegram' => ['Telegram link', ''],
         'social_youtube' => ['YouTube link', ''],
+        'header_code' => ['Header code (added before </head> on every page)', ''],
+        'footer_code' => ['Footer code (added before </body> on every page)', ''],
     ];
 
     // ---- schema -------------------------------------------------------------
@@ -181,11 +183,16 @@ SQL);
         if ($ext === null) {
             throw new UserError('Only JPG, PNG, GIF or WebP images can be uploaded.');
         }
-        $dir = TMS_ROOT . '/public/uploads/' . gmdate('Y-m');
+        // Save inside the folder the web server really serves (public/ in git, public_html on the live host).
+        $web = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+        if ($web === '' || !is_file($web . '/index.php')) {
+            $web = TMS_ROOT . '/public';
+        }
+        $dir = $web . '/uploads/' . gmdate('Y-m');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
             throw new UserError('Could not create the uploads folder on the server.');
         }
-        $guard = TMS_ROOT . '/public/uploads/.htaccess';
+        $guard = $web . '/uploads/.htaccess';
         if (!is_file($guard)) {
             @file_put_contents($guard, "Options -Indexes\n<FilesMatch \"\\.(php|phtml|phar|pl|py|cgi|sh)$\">\nRequire all denied\n</FilesMatch>\n");
         }

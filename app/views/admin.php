@@ -11,7 +11,7 @@ $size = function (int $bytes): string {
     }
     return '';
 };
-$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'domains' => 'Domains', 'mail' => 'Mail', 'logs' => 'Logs'];
+$labels = ['dashboard' => 'Dashboard', 'blog' => 'Blog', 'pages' => 'Pages', 'faq' => 'FAQ', 'messages' => 'Messages' . ($unread ? ' (' . $unread . ')' : ''), 'settings' => 'Settings', 'code' => 'Code', 'domains' => 'Domains', 'mail' => 'Mail', 'visitors' => 'Visitors', 'logs' => 'Logs'];
 $hidden = fn (string $k, $v) => '<input type="hidden" name="' . $e($k) . '" value="' . $e((string) $v) . '">';
 $logoSvg = '<svg class="logo-mark" viewBox="0 0 40 32" aria-hidden="true"><rect width="40" height="32" rx="7" fill="#2f80ed"/><path d="M8.5 9.5 20 18l11.5-8.5M8.5 23l8.2-7.2M31.5 23l-8.2-7.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 $form = fn (string $action, string $label, string $domain = '', string $class = 'btn btn-sm') =>
@@ -28,8 +28,8 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="/assets/app.css?v=6">
-<link rel="stylesheet" href="/assets/admin.css?v=2">
-<script src="/assets/admin.js?v=1" defer></script>
+<link rel="stylesheet" href="/assets/admin.css?v=4">
+<script src="/assets/admin.js?v=3" defer></script>
 </head>
 <body>
 <div class="admin">
@@ -72,7 +72,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     <h2>Right now</h2>
     <div class="tiles">
       <div class="tile"><div class="k">Live addresses</div><div class="v"><?= $n($live['mailboxes']) ?></div></div>
-      <div class="tile"><div class="k">Emails stored</div><div class="v"><?= $n($live['emails']) ?></div><div class="s">kept 3 hours each</div></div>
+      <div class="tile"><div class="k">Emails stored</div><div class="v"><?= $n($live['emails']) ?></div><div class="s">kept up to 24 hours</div></div>
       <div class="tile"><div class="k">Visitors (accounts)</div><div class="v"><?= $n($live['accounts']) ?></div><div class="s"><?= $n($live['online']) ?> active in last 10 min</div></div>
       <div class="tile"><div class="k">Storage used</div><div class="v"><?= $size($disk) ?></div></div>
     </div>
@@ -130,6 +130,16 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
   <?php elseif ($tab === 'blog'): ?>
     <?php if ($post === null): ?>
       <div class="a-bar"><h2>Blog posts</h2><a class="btn btn-primary" href="/admin?tab=blog&amp;edit=new">+ New post</a></div>
+      <form method="post" class="box" style="margin-bottom:16px">
+        <?= $hidden('csrf', $csrf) . $hidden('action', 'drip-posts') . $hidden('tab', 'blog') ?>
+        <strong>Schedule many posts</strong>
+        <p class="muted small">Write all your posts and save them as <b>Draft</b>. Then press the button: every draft is published one by one, in the order you wrote them. You can also set a future date on a single post.</p>
+        <div class="grid-2">
+          <label>First post goes live<input type="datetime-local" name="start" value="<?= $e((new DateTimeImmutable('@' . (time() + 3600)))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
+          <label>Then one post every<span style="display:flex;gap:8px"><input type="number" name="every" value="1" min="1" max="90" style="width:90px"><select name="unit"><option value="days">day(s)</option><option value="hours">hour(s)</option></select></span></label>
+        </div>
+        <button class="btn btn-primary" style="margin-top:10px">Schedule all drafts</button>
+      </form>
       <div class="tbl-wrap"><table>
         <tr><th>Title</th><th>Status</th><th>Date</th><th>Updated</th><th></th></tr>
         <?php foreach ($posts as $p): ?>
@@ -155,16 +165,33 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         <label>Title<input name="title" id="f-title" value="<?= $e($post['title']) ?>" required maxlength="200"></label>
         <label>Link (slug) <span class="muted small">bengal.email/blog/<b id="slug-preview"><?= $e($post['slug']) ?></b></span><input name="slug" id="f-slug" value="<?= $e($post['slug']) ?>" placeholder="made from the title if empty" maxlength="120" data-auto="<?= $post['id'] ? '0' : '1' ?>"></label>
         <label>Short description <span class="muted small">(shown on the blog list and in Google)</span><input name="description" value="<?= $e($post['description']) ?>" maxlength="300"></label>
+        <?php
+        $mode = (string) ($_POST['status'] ?? '');
+        if (!in_array($mode, ['now', 'schedule', 'draft'], true)) {
+            $mode = $post['status'] !== 'published' ? 'draft' : ((int) $post['published_at'] > time() ? 'schedule' : 'now');
+        }
+        $schedTs = (int) $post['published_at'] > time() ? (int) $post['published_at'] : time() + 86400;
+        ?>
         <div class="grid-2">
-          <label>Status<select name="status"><option value="published"<?= $post['status'] === 'published' ? ' selected' : '' ?>>Published (visible)</option><option value="draft"<?= $post['status'] !== 'published' ? ' selected' : '' ?>>Draft (hidden)</option></select></label>
-          <label>Publish date<input type="datetime-local" name="date" value="<?= $e((new DateTimeImmutable('@' . (int) $post['published_at']))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
+          <label>Status
+            <select name="status" id="f-status">
+              <option value="now"<?= $mode === 'now' ? ' selected' : '' ?>><?= $post['id'] && $post['status'] === 'published' && (int) $post['published_at'] <= time() ? 'Published (live)' : 'Publish Now' ?></option>
+              <option value="schedule"<?= $mode === 'schedule' ? ' selected' : '' ?>>Schedule (publish later)</option>
+              <option value="draft"<?= $mode === 'draft' ? ' selected' : '' ?>>Draft (hidden)</option>
+            </select>
+          </label>
+          <div id="sched-box"<?= $mode === 'schedule' ? '' : ' hidden' ?>>
+            <label>Publish date and time<input type="datetime-local" name="date" id="f-date" value="<?= $e((new DateTimeImmutable('@' . $schedTs))->setTimezone($tz)->format('Y-m-d\TH:i')) ?>"></label>
+            <label class="check"><input type="checkbox" name="auto_schedule" value="1" id="f-auto"<?= !empty($_POST['auto_schedule']) ? ' checked' : '' ?>> Auto: next free slot (09:00, one day after my last waiting post)</label>
+          </div>
         </div>
         <div class="cover-row">
           <?php if ($post['cover'] !== ''): ?><img src="<?= $e($post['cover']) ?>" alt="" class="cover-thumb"><label class="check"><input type="checkbox" name="remove_cover" value="1"> Remove cover image</label><?php endif; ?>
           <label>Cover image <span class="muted small">(JPG/PNG/WebP, optional)</span><input type="file" name="cover_file" accept="image/*"></label>
+          <label style="flex:1;min-width:220px">Cover image Alt text <span class="muted small">(describe the picture, helps image ranking)</span><input name="cover_alt" value="<?= $e($post['cover_alt'] ?? '') ?>" maxlength="200" placeholder="e.g. Temporary email inbox on a phone"></label>
         </div>
         <?php $editorName = 'body'; $editorValue = $post['body']; require __DIR__ . '/admin-editor.php'; ?>
-        <div class="a-bar"><button class="btn btn-primary">Save post</button></div>
+        <div class="a-bar"><button class="btn btn-primary" id="f-save">Save post</button></div>
       </form>
       <?php if ($post['id']): ?>
         <form method="post" data-confirm="Delete this post for good?"><?= $hidden('csrf', $csrf) . $hidden('action', 'delete-post') . $hidden('tab', 'blog') . $hidden('id', $post['id']) ?><button class="btn btn-sm danger">Delete this post</button></form>
@@ -243,10 +270,23 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
     <form method="post" class="box">
       <?= $hidden('csrf', $csrf) . $hidden('action', 'save-settings') . $hidden('tab', 'settings') ?>
       <?php foreach (Tms\Content::SETTINGS as $key => [$label]): ?>
+        <?php if (in_array($key, ['header_code', 'footer_code'], true)) { continue; } ?>
         <?php if ($key === 'social_facebook'): ?><h3>Follow Us links <span class="muted small">(leave empty to hide an icon)</span></h3><?php endif; ?>
         <label><?= $e($label) ?><input name="<?= $e($key) ?>" value="<?= $e($settings[$key]) ?>" maxlength="1000"<?= str_starts_with($key, 'social_') ? ' type="url" placeholder="https://"' : '' ?>></label>
       <?php endforeach; ?>
       <button class="btn btn-primary">Save settings</button>
+    </form>
+
+  <?php elseif ($tab === 'code'): ?>
+    <h2>Custom code</h2>
+    <p class="muted small">Paste ads, analytics or site-verification code here. It is added exactly as you paste it, on every public page.</p>
+    <form method="post" class="box">
+      <?= $hidden('csrf', $csrf) . $hidden('action', 'save-code') . $hidden('tab', 'code') ?>
+      <label>Header code <span class="muted small">(added just before &lt;/head&gt;)</span>
+        <textarea name="header_code" rows="8" maxlength="20000" spellcheck="false" style="font-family:monospace;width:100%"><?= $e($settings['header_code']) ?></textarea></label>
+      <label>Footer code <span class="muted small">(added just before &lt;/body&gt;)</span>
+        <textarea name="footer_code" rows="8" maxlength="20000" spellcheck="false" style="font-family:monospace;width:100%"><?= $e($settings['footer_code']) ?></textarea></label>
+      <button class="btn btn-primary">Save code</button>
     </form>
 
   <?php elseif ($tab === 'domains'): ?>
@@ -269,7 +309,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
           <td style="white-space:nowrap">
             <?php if ($d['name'] !== $default): ?><?= $form('default-domain', 'Make default', $d['name']) ?><?php endif; ?>
             <?= $form('toggle-domain', $d['active'] ? 'Pause' : 'Turn on', $d['name']) ?>
-            <?php if (!$d['live']): ?><?= $form('remove-domain', 'Remove', $d['name'], 'btn btn-sm danger') ?><?php endif; ?>
+            <form method="post" class="inline" onsubmit="return confirm('Delete <?= $e($d['name']) ?> for good? Its live addresses stop working.')"><input type="hidden" name="csrf" value="<?= $e($csrf) ?>"><input type="hidden" name="action" value="remove-domain"><input type="hidden" name="domain" value="<?= $e($d['name']) ?>"><button class="btn btn-sm danger">Delete</button></form>
           </td>
         </tr>
       <?php endforeach; ?>
@@ -311,7 +351,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <button class="btn btn-primary">Search</button>
       <?php if ($q !== ''): ?><a class="btn" href="/admin?tab=mail">Clear</a><?php endif; ?>
     </form>
-    <p class="muted small">Every email and address is kept here for you, even after the visitor deletes it or it expires. Visitors only see email for 3 hours.</p>
+    <p class="muted small">Every email record (sender address, time, size) is kept here for you, even after the visitor deletes it or it expires. The subject, text and code of each email are erased automatically 7 days after it arrives. Visitors only see email for up to 24 hours.</p>
 
     <h2>All emails received <span class="muted small">(<?= $n($emailTotal) ?>)</span></h2>
     <div class="tbl-wrap"><table>
@@ -373,6 +413,58 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <?php if (!$boxes): ?><tr><td colspan="4" class="muted">No addresses<?= $q !== '' ? ' match your search' : ' yet' ?>.</td></tr><?php endif; ?>
     </table></div>
     <?= $pager($boxTotal, $bp, 'bp') ?>
+
+  <?php elseif ($tab === 'visitors'): ?>
+    <?php
+    $cname = fn (string $c) => $c === '' ? '-' : ((class_exists('Locale') ? \Locale::getDisplayRegion('-' . $c, 'en') : $c) . ' (' . $c . ')');
+    $dur = function (int $s): string {
+        if ($s < 60) {
+            return $s . 's';
+        }
+        return $s < 3600 ? intdiv($s, 60) . 'm ' . ($s % 60) . 's' : intdiv($s, 3600) . 'h ' . intdiv($s % 3600, 60) . 'm';
+    };
+    $vq = fn (array $over) => '/admin?' . $e(http_build_query(array_merge(array_filter(['tab' => 'visitors', 'q' => $f['q'], 'days' => $f['days'] !== 30 ? $f['days'] : null, 'device' => $f['device'], 'browser' => $f['browser'], 'country' => $f['country'], 'src' => $f['src'], 'landing' => $f['landing'], 'mails' => $f['mails'] ? 1 : null], fn ($v) => $v !== null && $v !== ''), $over)));
+    ?>
+    <div class="a-bar">
+      <h2>Visitors</h2>
+      <span class="online-now"><i class="online-dot"></i> Online Now - <b data-online><?= $n($online) ?></b></span>
+    </div>
+    <form method="get" class="box vis-filter">
+      <input type="hidden" name="tab" value="visitors">
+      <input name="q" value="<?= $e($f['q']) ?>" placeholder="Search IP, browser, country or source" autocomplete="off" autocapitalize="none">
+      <div class="grid-4">
+        <label>Time<select name="days"><?php foreach ([1 => 'Last 24 hours', 7 => 'Last 7 days', 30 => 'Last 30 days'] as $d => $l): ?><option value="<?= $d ?>"<?= $f['days'] === $d ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></label>
+        <label>Device<select name="device"><option value="">All</option><?php foreach (['Desktop' => 'PC (Desktop)', 'Mobile' => 'Mobile', 'Tablet' => 'Tablet'] as $k => $l): ?><option value="<?= $k ?>"<?= $f['device'] === $k ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></label>
+        <label>Browser<select name="browser"><option value="">All</option><?php foreach ($browsers as $b): ?><option<?= $f['browser'] === $b ? ' selected' : '' ?>><?= $e($b) ?></option><?php endforeach; ?></select></label>
+        <label>Country<select name="country"><option value="">All</option><?php foreach ($countries as $c): ?><option value="<?= $e($c) ?>"<?= $f['country'] === $c ? ' selected' : '' ?>><?= $e($cname($c)) ?></option><?php endforeach; ?></select></label>
+        <label>Came from<select name="src"><option value="">All</option><option value="direct"<?= $f['src'] === 'direct' ? ' selected' : '' ?>>Direct</option><option value="ref"<?= $f['src'] === 'ref' ? ' selected' : '' ?>>From another site</option></select></label>
+        <label>First page<select name="landing"><option value="">All</option><option value="home"<?= $f['landing'] === 'home' ? ' selected' : '' ?>>Home page</option><option value="blog"<?= $f['landing'] === 'blog' ? ' selected' : '' ?>>Blog (list or post)</option><option value="other"<?= $f['landing'] === 'other' ? ' selected' : '' ?>>Other pages</option></select></label>
+        <label class="check" style="align-self:end;padding-bottom:12px"><input type="checkbox" name="mails" value="1"<?= $f['mails'] ? ' checked' : '' ?>> Made at least 1 mail</label>
+      </div>
+      <button class="btn btn-primary">Filter</button>
+      <a class="btn" href="/admin?tab=visitors">Clear</a>
+    </form>
+    <p class="muted small">Newest visitor first. <?= $n($total) ?> visit(s), <?= $n($sum['ips']) ?> different IP(s), <?= $n($sum['mails']) ?> address(es) made. A visit ends after 30 minutes without activity. Data older than 30 days is deleted automatically. Country comes from Cloudflare.</p>
+    <div class="tbl-wrap"><table class="rs-table" id="vis-table">
+      <tr><th>IP</th><th>Browser</th><th>Device</th><th>Country</th><th>Time</th><th>Stayed</th><th class="num">Mails</th><th>Came from</th><th>First page</th></tr>
+      <?php foreach ($rows as $r): ?>
+        <tr>
+          <td class="small"><a href="<?= $vq(['q' => $r['ip']]) ?>"><?= $e($r['ip']) ?></a></td>
+          <td class="small"><?= $e(trim($r['browser'] . ' ' . $r['bver'])) ?></td>
+          <td class="small"><?= $r['device'] === 'Desktop' ? 'PC' : $e($r['device']) ?></td>
+          <td class="small"><?= $e($cname((string) $r['country'])) ?></td>
+          <td class="small" style="white-space:nowrap"><?= $t($r['first_at']) ?></td>
+          <td class="small" style="white-space:nowrap"><?= $e($dur(max(0, (int) $r['last_at'] - (int) $r['first_at']))) ?><?= (int) $r['last_at'] > time() - 70 ? ' <span class="pill on">online</span>' : '' ?></td>
+          <td class="num small"><?= $n($r['mails']) ?></td>
+          <td class="small"><?php if ($r['ref'] === ''): ?>Direct<?php else: $h = preg_replace('/^www\./', '', (string) parse_url($r['ref'], PHP_URL_HOST)); ?><a href="<?= $e($r['ref']) ?>" target="_blank" rel="noopener nofollow" title="<?= $e($r['ref']) ?>"><?= $e($h) ?></a><?php endif; ?></td>
+          <td class="small"><?php $lp = (string) ($r['landing'] ?: '/'); ?><a href="<?= $e($lp) ?>" target="_blank" rel="noopener"><?= $lp === '/' ? 'Home' : $e($lp) ?></a></td>
+        </tr>
+      <?php endforeach; ?>
+      <?php if (!$rows): ?><tr><td colspan="9" class="muted">No visitors match.</td></tr><?php endif; ?>
+    </table></div>
+    <?php $pages = max(1, (int) ceil($total / $per)); if ($pages > 1): ?>
+      <div class="a-bar"><?= $vp > 1 ? '<a class="btn btn-sm" href="' . $vq(['vp' => $vp - 1]) . '">&larr; Newer</a>' : '' ?><span class="muted small">Page <?= $vp ?> of <?= $pages ?></span><?= $vp < $pages ? '<a class="btn btn-sm" href="' . $vq(['vp' => $vp + 1]) . '">Older &rarr;</a>' : '' ?></div>
+    <?php endif; ?>
 
   <?php else: ?>
     <?php $titles = ['error' => 'Errors', 'ingest' => 'Mail problems (dropped / too big)', 'cron' => 'Cleanup runs', 'admin' => 'Admin activity']; ?>
