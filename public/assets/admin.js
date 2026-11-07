@@ -179,4 +179,40 @@
       file.value = '';
     });
   });
+
+  // Resizable columns (Visitors table). The table always fits the screen: dragging a handle trades width with the next column.
+  // The widths are remembered in this browser.
+  const rt = document.getElementById('vis-table');
+  if (rt) {
+    const ths = Array.from(rt.rows[0].cells);
+    const KEY = 'tms_vis_cols_v1';
+    const def = [17, 11, 7, 12, 12, 10, 6, 12, 13];
+    let w = def.slice();
+    try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s) && s.length === ths.length && Math.abs(s.reduce((a, b) => a + b, 0) - 100) < 1) w = s; } catch (e) { /* use default */ }
+    const cg = document.createElement('colgroup');
+    const cols = ths.map(() => cg.appendChild(document.createElement('col')));
+    rt.insertBefore(cg, rt.firstChild);
+    const apply = () => cols.forEach((c, i) => { c.style.width = w[i] + '%'; });
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(w.map((x) => Math.round(x * 10) / 10))); } catch (e) { /* private mode */ } };
+    apply();
+    Array.from(rt.rows).slice(1).forEach((r) => Array.from(r.cells).forEach((c) => { if (c.colSpan === 1) c.title = c.textContent.trim(); }));
+    ths.slice(0, -1).forEach((th, i) => {
+      const g = document.createElement('span');
+      g.className = 'col-grip';
+      th.appendChild(g);
+      g.addEventListener('pointerdown', (ev) => {
+        ev.preventDefault();
+        g.setPointerCapture(ev.pointerId);
+        g.classList.add('on');
+        const x0 = ev.clientX; const a0 = w[i]; const b0 = w[i + 1]; const total = rt.getBoundingClientRect().width;
+        const move = (e) => {
+          const d = ((e.clientX - x0) / total) * 100;
+          const nd = Math.max(-(a0 - 4), Math.min(b0 - 4, d));
+          w[i] = a0 + nd; w[i + 1] = b0 - nd; apply();
+        };
+        const up = () => { g.classList.remove('on'); g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); save(); };
+        g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+      });
+    });
+  }
 })();

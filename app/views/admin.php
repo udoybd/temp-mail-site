@@ -28,8 +28,8 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="/assets/app.css?v=6">
-<link rel="stylesheet" href="/assets/admin.css?v=3">
-<script src="/assets/admin.js?v=2" defer></script>
+<link rel="stylesheet" href="/assets/admin.css?v=4">
+<script src="/assets/admin.js?v=3" defer></script>
 </head>
 <body>
 <div class="admin">
@@ -445,7 +445,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
       <a class="btn" href="/admin?tab=visitors">Clear</a>
     </form>
     <p class="muted small">Newest visitor first. <?= $n($total) ?> visit(s), <?= $n($sum['ips']) ?> different IP(s), <?= $n($sum['mails']) ?> address(es) made. A visit ends after 30 minutes without activity. Data older than 30 days is deleted automatically. Country comes from Cloudflare.</p>
-    <div class="tbl-wrap"><table>
+    <div class="tbl-wrap"><table class="rs-table" id="vis-table">
       <tr><th>IP</th><th>Browser</th><th>Device</th><th>Country</th><th>Time</th><th>Stayed</th><th class="num">Mails</th><th>Came from</th><th>First page</th></tr>
       <?php foreach ($rows as $r): ?>
         <tr>
