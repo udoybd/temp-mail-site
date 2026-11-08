@@ -549,6 +549,7 @@ final class Admin
                 'device' => in_array($_GET['device'] ?? '', ['Desktop', 'Mobile', 'Tablet'], true) ? (string) $_GET['device'] : '',
                 'browser' => mb_substr((string) ($_GET['browser'] ?? ''), 0, 40), 'country' => preg_match('/^[A-Z]{2}$/', (string) ($_GET['country'] ?? '')) ? (string) $_GET['country'] : '',
                 'src' => in_array($_GET['src'] ?? '', ['direct', 'ref'], true) ? (string) $_GET['src'] : '', 'landing' => in_array($_GET['landing'] ?? '', ['home', 'blog', 'other'], true) ? (string) $_GET['landing'] : '', 'mails' => !empty($_GET['mails']),
+                'type' => in_array($_GET['type'] ?? '', ['bots', 'all'], true) ? (string) $_GET['type'] : 'real',
             ];
             $where = ['first_at >= ?'];
             $args = [$now - $days * 86400];
@@ -584,12 +585,19 @@ final class Admin
             if ($f['mails']) {
                 $where[] = 'mails > 0';
             }
+            $botSql = "(bot != '' OR " . Visitors::zeroSql() . ')';
+            if ($f['type'] === 'real') {
+                $where[] = 'NOT ' . $botSql;
+            } elseif ($f['type'] === 'bots') {
+                $where[] = $botSql;
+            }
             $w = 'WHERE ' . implode(' AND ', $where);
             $per = 50;
             $vp = max(1, (int) ($_GET['vp'] ?? 1));
             return [
                 'f' => $f, 'vp' => $vp, 'per' => $per,
                 'online' => Visitors::online(),
+                'botCount' => (int) Db::one('SELECT COUNT(*) AS n FROM visits WHERE first_at >= ? AND ' . $botSql, [$now - $days * 86400])['n'],
                 'total' => (int) Db::one('SELECT COUNT(*) AS n FROM visits ' . $w, $args)['n'],
                 'sum' => Db::one('SELECT COALESCE(SUM(mails), 0) AS mails, COUNT(DISTINCT ip) AS ips FROM visits ' . $w, $args),
                 'rows' => Db::all('SELECT * FROM visits ' . $w . ' ORDER BY first_at DESC, id DESC LIMIT ' . $per . ' OFFSET ' . (($vp - 1) * $per), $args),

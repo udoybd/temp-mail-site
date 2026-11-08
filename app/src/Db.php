@@ -165,6 +165,18 @@ SQL);
             $pdo->exec("ALTER TABLE posts ADD COLUMN cover_alt TEXT NOT NULL DEFAULT ''");
             $pdo->exec('PRAGMA user_version = 13');
         }
+        if ($version < 14) {
+            // Bot flag for Visitors: reason text, empty = real person. Old rows are classified from what we stored.
+            $pdo->exec("ALTER TABLE visits ADD COLUMN bot TEXT NOT NULL DEFAULT ''");
+            $upd = $pdo->prepare('UPDATE visits SET bot = ? WHERE id = ?');
+            foreach ($pdo->query('SELECT id, ip, browser, bver FROM visits')->fetchAll(PDO::FETCH_ASSOC) as $v) {
+                $why = Visitors::botReason((string) $v['ip'], (string) $v['browser'], (string) $v['bver']);
+                if ($why !== '') {
+                    $upd->execute([$why, $v['id']]);
+                }
+            }
+            $pdo->exec('PRAGMA user_version = 14');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
