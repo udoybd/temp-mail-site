@@ -423,7 +423,7 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         }
         return $s < 3600 ? intdiv($s, 60) . 'm ' . ($s % 60) . 's' : intdiv($s, 3600) . 'h ' . intdiv($s % 3600, 60) . 'm';
     };
-    $vq = fn (array $over) => '/admin?' . $e(http_build_query(array_merge(array_filter(['tab' => 'visitors', 'q' => $f['q'], 'days' => $f['days'] !== 30 ? $f['days'] : null, 'device' => $f['device'], 'browser' => $f['browser'], 'country' => $f['country'], 'src' => $f['src'], 'landing' => $f['landing'], 'mails' => $f['mails'] ? 1 : null], fn ($v) => $v !== null && $v !== ''), $over)));
+    $vq = fn (array $over) => '/admin?' . $e(http_build_query(array_merge(array_filter(['tab' => 'visitors', 'q' => $f['q'], 'days' => $f['days'] !== 30 ? $f['days'] : null, 'device' => $f['device'], 'browser' => $f['browser'], 'country' => $f['country'], 'src' => $f['src'], 'landing' => $f['landing'], 'mails' => $f['mails'] ? 1 : null, 'type' => $f['type'] !== 'real' ? $f['type'] : null], fn ($v) => $v !== null && $v !== ''), $over)));
     ?>
     <div class="a-bar">
       <h2>Visitors</h2>
@@ -439,17 +439,18 @@ $form = fn (string $action, string $label, string $domain = '', string $class = 
         <label>Country<select name="country"><option value="">All</option><?php foreach ($countries as $c): ?><option value="<?= $e($c) ?>"<?= $f['country'] === $c ? ' selected' : '' ?>><?= $e($cname($c)) ?></option><?php endforeach; ?></select></label>
         <label>Came from<select name="src"><option value="">All</option><option value="direct"<?= $f['src'] === 'direct' ? ' selected' : '' ?>>Direct</option><option value="ref"<?= $f['src'] === 'ref' ? ' selected' : '' ?>>From another site</option></select></label>
         <label>First page<select name="landing"><option value="">All</option><option value="home"<?= $f['landing'] === 'home' ? ' selected' : '' ?>>Home page</option><option value="blog"<?= $f['landing'] === 'blog' ? ' selected' : '' ?>>Blog (list or post)</option><option value="other"<?= $f['landing'] === 'other' ? ' selected' : '' ?>>Other pages</option></select></label>
+        <label>Visitor type<select name="type"><?php foreach (['real' => 'Real users only', 'bots' => 'Bots only', 'all' => 'All'] as $k => $l): ?><option value="<?= $k ?>"<?= $f['type'] === $k ? ' selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></label>
         <label class="check" style="align-self:end;padding-bottom:12px"><input type="checkbox" name="mails" value="1"<?= $f['mails'] ? ' checked' : '' ?>> Made at least 1 mail</label>
       </div>
       <button class="btn btn-primary">Filter</button>
       <a class="btn" href="/admin?tab=visitors">Clear</a>
     </form>
-    <p class="muted small">Newest visitor first. <?= $n($total) ?> visit(s), <?= $n($sum['ips']) ?> different IP(s), <?= $n($sum['mails']) ?> address(es) made. A visit ends after 30 minutes without activity. Data older than 30 days is deleted automatically. Country comes from Cloudflare.</p>
+    <p class="muted small">Newest visitor first. <?= $n($total) ?> visit(s), <?= $n($sum['ips']) ?> different IP(s), <?= $n($sum['mails']) ?> address(es) made. <?= $n($botCount) ?> bot visit(s) in this period are hidden unless you pick Bots/All under Visitor type. A bot = cloud/datacenter IP, fake or very old browser, no language header, or a 0s stay with no mail. A visit ends after 30 minutes without activity. Data older than 30 days is deleted automatically. Country comes from Cloudflare.</p>
     <div class="tbl-wrap"><table class="rs-table" id="vis-table">
       <tr><th>IP</th><th>Browser</th><th>Device</th><th>Country</th><th>Time</th><th>Stayed</th><th class="num">Mails</th><th>Came from</th><th>First page</th></tr>
       <?php foreach ($rows as $r): ?>
         <tr>
-          <td class="small"><a href="<?= $vq(['q' => $r['ip']]) ?>"><?= $e($r['ip']) ?></a></td>
+          <td class="small"><a href="<?= $vq(['q' => $r['ip']]) ?>"><?= $e($r['ip']) ?></a><?php $why = Tms\Visitors::rowReason($r); if ($why !== ''): ?> <span class="pill off" title="<?= $e($why) ?>">Bot</span><?php endif; ?></td>
           <td class="small"><?= $e(trim($r['browser'] . ' ' . $r['bver'])) ?></td>
           <td class="small"><?= $r['device'] === 'Desktop' ? 'PC' : $e($r['device']) ?></td>
           <td class="small"><?= $e($cname((string) $r['country'])) ?></td>
