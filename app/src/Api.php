@@ -24,6 +24,12 @@ final class Api
     {
         $body = $method === 'GET' ? [] : Http::body();
 
+        if ($method === 'POST' && $path === '/api/ping') {
+            Visitors::ping();
+            Http::json(['ok' => true]);
+            return;
+        }
+
         if ($method === 'GET' && $path === '/api/state') {
             $account = Account::current();
             Http::json([

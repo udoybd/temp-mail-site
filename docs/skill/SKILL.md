@@ -9,6 +9,12 @@ Free disposable email site, live at **https://bengal.email**. Brand name everywh
 
 The old test site on **jamaluddin.info is obsolete**: its files, Git link, cron and mail pipe were removed on 2026-11-04. The domain is kept but empty (returns 403). Never deploy there and never treat jamaluddin.info as the site.
 
+## Working rules (owner's limit is precious)
+- **Do not re-read this skill's long sections, old chats or big files again and again.** Read only the few files you must change; if you really must read something big, tell the owner why in one line.
+- Everything not part of today's request must stay exactly as it is.
+- Reply short, in Bangla. Test locally first (`php -S`, Playwright is installed), then deploy.
+- **Live uploads need the owner's explicit "লাইভে দিন" each time**: the system blocks production deploys until the owner says so in chat. Prepare, push to the PR branch, ask once, then upload.
+
 ## Owner and communication
 - Owner: Jamal Uddin, GitHub `udoybd`. Always reply in **Bangla**, simple language, short. Works mostly from the phone.
 - Give tap-by-tap steps for anything they must do themselves (DirectAdmin, Cloudflare, Namecheap, GitHub).
@@ -22,7 +28,7 @@ The old test site on **jamaluddin.info is obsolete**: its files, Git link, cron 
 - Old jamaluddin.info temp-mail files are gone. A backup zip `tms-migrate.zip` is in the owner's PC Downloads folder.
 - **No Premium page.** Everything is free. `/premium` and `/inbox` redirect to `/#inbox`. Do not add paid plans unless the owner asks.
 - Do not replace `public/sw.js` with an ad network's service worker (Monetag sw.js was tried and rolled back on owner's request). Ad/verification code goes in **Admin → Code** instead. Keep the Monetag verification meta tag that is in `app/views/layout.php`.
-- **Live server may be ahead of GitHub.** On 2026-11-04 two changes were made directly on the server and could not be pushed (GitHub error): the **Admin → Code** tab (Header code / Footer code) and the **Delete** button on Admin → Domains. Before uploading a full copy of the repo to the server, download those files from the server and commit them to GitHub first, or they will be lost. Always compare live vs repo before a big deploy.
+- **GitHub and live server were synced on 2026-11-07** (PR #5 branch `claude/project-thread-ywd0s1`, includes Code tab and domain Delete). Still compare live vs repo (file hashes) before any big deploy; never upload a full repo copy over `storage/` or `public_html/uploads/`.
 
 ## Architecture
 ```
@@ -94,6 +100,7 @@ All non-GET calls except `/api/incoming` need header `X-TMS: 1` (CSRF guard). JS
 | POST | `/api/account/link-code` | QR/link URL to sync another device |
 | POST | `/api/account/delete` | delete current account, or `{code}` to delete by recovery code |
 | POST | `/api/incoming` | Worker webhook: raw email, `X-Ingest-Secret`, `X-Rcpt-To` |
+| POST | `/api/ping` | visitor heartbeat for Online Now and time on site |
 | POST | `/api/contact` | contact form `{name,email,subject,message}`, honeypot `website` |
 Other routes: `/m/{id}/html`, `/attachment/{id}`, `/link/{code}`, `/sitemap.xml`.
 
@@ -102,22 +109,28 @@ Login: password set by the owner. First-ever setup asks for the code in `storage
 
 Tabs (`Admin::TABS`):
 1. **Dashboard**: daily counts (addresses, emails), live totals, delivery speed, cron status, latest emails and addresses, change password, logout.
-2. **Blog**: new/edit/delete post, draft or published, publish date, slug, meta description, cover image, HTML editor with image upload (to `public/uploads/`) and preview.
+2. **Blog**: new/edit/delete post; Status = **Publish Now / Schedule / Draft**. Schedule asks date-time, or tick **Auto** = 09:00 the day after the last waiting post (Admin::nextSlot). Editing a live post keeps its date. Cover image upload + **Cover image Alt text** (`posts.cover_alt`, used as img alt in blog list and post). Editor: **Visual** (contenteditable, like WordPress classic; text selectable/copyable) / **Code (HTML)** / **Split**, always in sync (public/assets/admin.js). Bulk "Schedule all drafts" kept.
 3. **Pages**: edit Features, FAQ intro, Contact intro, How it works, About, Support, Privacy, Terms; "Reset to original text".
 4. **FAQ**: add, edit, reorder, delete questions on `/faq`.
 5. **Messages**: contact form messages; mark read, delete.
 6. **Settings**: home badge line, home title, ticks, footer text, Follow Us links (must start with http/https).
-7. **Code** (live server only as of 2026-11-04, see warnings): Header code (before `</head>`) and Footer code (before `</body>`) on every page, max 20,000 chars, saved as-is. Use for Monetag, AdSense, Analytics, verification tags.
-8. **Domains**: add mail domain, pause/resume, make default, remove/**Delete** (Delete button with confirm works even with live addresses; live-server only as of 2026-11-04). Domains live in DB table `domains`, seeded from config `domains`. A new mail domain also needs Cloudflare: add zone, Email Routing on, catch-all -> Worker `temp-mail-site`.
+7. **Code**: Header code (before `</head>`) and Footer code (before `</body>`) on every page, max 20,000 chars, saved as-is. Use for Monetag, AdSense, Analytics, verification tags.
+8. **Domains**: add mail domain, pause/resume, make default, remove/**Delete** (Delete button with confirm works even with live addresses). Domains live in DB table `domains`, seeded from config `domains`. A new mail domain also needs Cloudflare: add zone, Email Routing on, catch-all -> Worker `temp-mail-site`.
 9. **Mail**: full history of every email and address (kept forever), with route (Cloudflare/Hosting) and per-hop delay, plus addresses deleted earlier.
-10. **Logs**: app logs (cron runs, errors, ingest).
+10. **Visitors** (before Logs; class `Visitors`, table `visits`, migrations v12/v13): one row per visit (ends after 30 min idle) from public page views (bots skipped; cookie `tms_vid`; heartbeat `visit.js` -> `POST /api/ping` every 25 s). Columns: IP, Browser, Device (PC/Mobile/Tablet), Country (Cloudflare `CF-IPCountry`), Time, Stayed, Mails made (bumped in Mailbox::create), Came from (Direct or referrer link), First page (landing path). Filters: time (24h/7d/30d), device, browser, country, came from, first page (Home/Blog/Other), made-mail, text search; newest first; 50 per page. Top badge "Online Now - N" (seen in last 70 s, refreshes every 15 s). Table fits the screen; column widths are draggable and saved in `localStorage` key `tms_vis_cols_v1`; long text is cut with "…". Rows are deleted after 30 days by Cleanup (cron); privacy page says so. IP is shown as received: IPv6 is normal on mobile networks; the real IPv4 cannot be known (Cloudflare "Pseudo IPv4" is fake, not used).
+11. **Logs**: app logs (cron runs, errors, ingest).
+
+## Live layout and how to deploy without SSH
+Live folder `/domains/bengal.email/` (DirectAdmin): `app/ bin/ vendor/ storage/ public_html/` — **`public/` in git = `public_html/` on the server** (`public_html/index.php` requires `../app/bootstrap.php`). Uploaded images live in `public_html/uploads/` (Content::saveImage uses DOCUMENT_ROOT, fixed 2026-11-07; before that they went to a dead `public/uploads`).
+Deploy used on 2026-11-07, from the owner's logged-in Chrome (claude-in-chrome) on the DirectAdmin tab `da2.cpanelaccess.com:2222`:
+1. Push changes to the PR branch (repo is public). 2. In the DA tab run JS: `fetch(raw.githubusercontent.com/udoybd/temp-mail-site/<branch>/<file>)`, then POST multipart to `/CMD_API_FILE_MANAGER` with `action=upload, path=<server dir>, overwrite=yes, file1=<blob>`. 3. Read the file back from `/CMD_FILE_MANAGER/<path>` and compare. Delete: POST `action=multiple&button=delete&path=..&select0=..`. List: `/CMD_API_FILE_MANAGER?action=json_all&path=..`. 4. Bump `?v=` in views for changed CSS/JS (admin.css/js are at v4/v3, visit.js v1). 5. Check pages return 200 from a normal browser tab (the cloud container cannot reach bengal.email). DB migrations run on the next request.
 
 ## Server settings (`storage/config.php` on server)
 Generated on first run. Keys: `site_name`, `site_url` (https://bengal.email), `domains`, `reserved`, `support_email`, `allow_custom_names`, `email_ttl`, `idle_account_ttl` (30 days), `mailboxes_per_ip_per_day`, `max_mailboxes_per_account`, `max_message_bytes`, `poll_interval`, `ingest_secret` (must equal Worker `INGEST_SECRET`), `app_key`, `adsense_client`, `adsense_slot`, `analytics_id`, `timezone` (Asia/Dhaka). Never print `ingest_secret` or `app_key` in chat or commit them.
 
 ## Deploy / update steps
 1. Make the change on a branch in `udoybd/temp-mail-site`, open a PR, owner merges to `main` (or commit straight to main only if the owner asks).
-2. Put the changed files on the server: DirectAdmin → File Manager → bengal.email site folder, upload/replace only the changed files (keep `storage/` and `public/uploads/` untouched). If a Remote Control session on the owner's PC is available, Claude can do this through the owner's logged-in Chrome.
+2. Put the changed files on the server (see "Live layout and how to deploy" above): DirectAdmin → File Manager → bengal.email site folder, upload/replace only the changed files (keep `storage/` and `public/uploads/` untouched). If a Remote Control session on the owner's PC is available, Claude can do this through the owner's logged-in Chrome.
 3. After CSS/JS/sw.js changes: Cloudflare → bengal.email → Caching → Purge (the file URLs, or everything).
 4. Check: `/`, `/faq`, `/blog`, `/admin` return 200; create an address and ask the owner to send a test mail from Gmail; check Admin → Mail shows it.
 5. DB schema changes go in migrations inside `Db.php` (runs automatically on next request). Back up `storage/` (DB) before a migration.
@@ -138,6 +151,7 @@ TMS_STORAGE=/tmp/tms php -S 127.0.0.1:8080 -t public tests/dev-router.php
 
 ## History (short)
 - 2026-10-28: built on jamaluddin.info (cPanel), moved mail to Cloudflare Email Routing + Worker for speed.
+- 2026-11-07 (PR #5): Visitors tab, blog Publish Now/Schedule/Auto/Draft, cover image fix + alt text, Visual/Code/Split editor, resizable Visitors columns, live-only files synced to GitHub.
 - 2026-11-04: redesign (indigo), editable content in admin (PR #1), 24 h rules (PR #2, #3), moved to bengal.email on folafal DirectAdmin, renamed Bengal.email, Monetag verified via meta tag, Code tab and domain Delete added live, jamaluddin.info emptied.
 - Original goal: same features as ilovetempmail.com, but never copy its brand, logo, illustrations or text.
 

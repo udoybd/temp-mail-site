@@ -21,30 +21,120 @@
     slug.addEventListener('input', () => { slug.dataset.auto = '0'; show(); });
   }
 
-  // Simple HTML editor: toolbar buttons wrap the selected text in tags.
+  // Post status: show the date box only for Schedule, and name the save button after the choice.
+  const status = document.getElementById('f-status');
+  if (status) {
+    const box = document.getElementById('sched-box');
+    const save = document.getElementById('f-save');
+    const auto = document.getElementById('f-auto');
+    const date = document.getElementById('f-date');
+    const upd = () => {
+      box.hidden = status.value !== 'schedule';
+      save.textContent = { now: 'Publish Now', schedule: 'Schedule post', draft: 'Save draft' }[status.value];
+      if (date && auto) date.disabled = auto.checked && status.value === 'schedule';
+    };
+    status.addEventListener('change', upd);
+    if (auto) auto.addEventListener('change', upd);
+    upd();
+  }
+
+  // Online Now counter on the Visitors tab.
+  const online = document.querySelector('[data-online]');
+  if (online) {
+    setInterval(async () => {
+      try {
+        const r = await fetch('/admin?tab=visitors&online=1', { credentials: 'same-origin' });
+        if (r.ok) online.textContent = (await r.json()).online;
+      } catch (e) { /* ignore */ }
+    }, 15000);
+  }
+
+  // Editor: Visual (editable preview, like the WordPress classic editor), Code (HTML) or Split. Always in sync.
   document.querySelectorAll('.editor').forEach((ed) => {
     const ta = ed.querySelector('.editor-text');
-    const preview = ed.querySelector('.editor-preview');
+    const vis = ed.querySelector('.editor-visual');
     const file = ed.querySelector('.editor-file');
+    let mode = 'visual'; let last = 'vis';
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { /* old browser */ }
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const toVis = () => { vis.innerHTML = ta.value; };
+    const toCode = () => { const h = vis.innerHTML; ta.value = h === '<br>' ? '' : h; };
 
+    const setMode = (m) => {
+      if (m === 'code' && mode !== 'code') toCode();
+      if (m !== 'code' && mode === 'code') toVis();
+      mode = m;
+      vis.hidden = m === 'code';
+      ta.hidden = m === 'visual';
+      ed.querySelectorAll('.ed-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+    };
+    ed.querySelectorAll('.ed-tabs button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+    vis.addEventListener('input', toCode);
+    ta.addEventListener('input', () => { if (mode === 'split') toVis(); });
+    vis.addEventListener('focus', () => { last = 'vis'; });
+    ta.addEventListener('focus', () => { last = 'ta'; });
+    const form = ed.closest('form');
+    if (form) form.addEventListener('submit', () => { if (mode !== 'code') toCode(); });
+    toVis();
+    setMode('visual');
+
+    const inVis = () => mode === 'visual' || (mode === 'split' && last === 'vis');
+
+    // --- code (textarea) helpers
     const wrap = (before, after, placeholder) => {
       const s = ta.selectionStart; const e = ta.selectionEnd;
       const sel = ta.value.slice(s, e) || placeholder || '';
       ta.setRangeText(before + sel + after, s, e, 'end');
       ta.focus();
       ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+      if (mode === 'split') toVis();
     };
     const list = (tag) => {
       const s = ta.selectionStart; const e = ta.selectionEnd;
       const lines = (ta.value.slice(s, e) || 'First item\nSecond item').split(/\n/).filter((l) => l.trim());
       ta.setRangeText('<' + tag + '>\n' + lines.map((l) => '<li>' + l.trim() + '</li>').join('\n') + '\n</' + tag + '>\n', s, e, 'end');
       ta.focus();
+      if (mode === 'split') toVis();
     };
-    const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+    // --- visual helpers
+    const exec = (cmd, val) => { vis.focus(); document.execCommand(cmd, false, val); toCode(); };
+    const askUrl = () => {
+      const sel = window.getSelection();
+      const saved = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+      const url = window.prompt('Link address (https://... or /page)', 'https://');
+      vis.focus();
+      if (saved) { sel.removeAllRanges(); sel.addRange(saved); }
+      return url;
+    };
+    const selText = () => String(window.getSelection());
 
     ed.querySelectorAll('.toolbar button').forEach((b) => {
       b.addEventListener('click', () => {
         const cmd = b.dataset.cmd;
+        if (cmd === 'paras') {
+          if (mode !== 'code') toCode();
+          const parts = ta.value.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+          ta.value = parts.map((p) => (/^<(h\d|p|ul|ol|div|blockquote|figure|img|table|section|iframe)/i.test(p) ? p : '<p>' + p.replace(/\n/g, '<br>') + '</p>')).join('\n\n');
+          if (mode !== 'code') toVis();
+          return;
+        }
+        if (cmd === 'image') { file.click(); return; }
+        if (inVis()) {
+          if (cmd === 'h2' || cmd === 'h3' || cmd === 'p') exec('formatBlock', '<' + cmd + '>');
+          else if (cmd === 'b') exec('bold');
+          else if (cmd === 'i') exec('italic');
+          else if (cmd === 'quote') exec('formatBlock', '<blockquote>');
+          else if (cmd === 'ul') exec('insertUnorderedList');
+          else if (cmd === 'ol') exec('insertOrderedList');
+          else if (cmd === 'link') { const url = askUrl(); if (url) exec('createLink', url); }
+          else if (cmd === 'button') {
+            const url = askUrl(); if (!url) return;
+            const ext = /^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
+            exec('insertHTML', '<a href="' + esc(url) + '" class="btn btn-primary"' + ext + '>' + (esc(selText()) || 'Button text') + '</a>');
+          }
+          return;
+        }
         if (cmd === 'h2' || cmd === 'h3' || cmd === 'p') wrap('<' + cmd + '>', '</' + cmd + '>\n', cmd === 'p' ? 'Paragraph text' : 'Heading');
         else if (cmd === 'b') wrap('<strong>', '</strong>', 'bold text');
         else if (cmd === 'i') wrap('<em>', '</em>', 'text');
@@ -56,22 +146,15 @@
           const cls = cmd === 'button' ? ' class="btn btn-primary"' : '';
           const ext = /^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
           wrap('<a href="' + esc(url) + '"' + cls + ext + '>', '</a>', cmd === 'button' ? 'Button text' : 'link text');
-        } else if (cmd === 'paras') {
-          const parts = ta.value.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-          ta.value = parts.map((p) => (/^<(h\d|p|ul|ol|div|blockquote|figure|img|table|section|iframe)/i.test(p) ? p : '<p>' + p.replace(/\n/g, '<br>') + '</p>')).join('\n\n');
-        } else if (cmd === 'image') file.click();
-        else if (cmd === 'preview') {
-          const on = preview.hidden;
-          if (on) preview.innerHTML = ta.value;
-          preview.hidden = !on; ta.hidden = on;
-          b.classList.toggle('on', on);
-          b.textContent = on ? 'Back to editing' : 'Preview';
         }
       });
     });
 
     file.addEventListener('change', async () => {
       if (!file.files.length) return;
+      const asVis = inVis();
+      const sel = window.getSelection();
+      const saved = asVis && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
       const fd = new FormData();
       fd.append('csrf', ed.dataset.csrf);
       fd.append('action', 'upload-image');
@@ -81,11 +164,55 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Upload failed');
         const alt = window.prompt('Short description of the image (for Google)', '') || '';
-        wrap('<img src="' + esc(data.url) + '" alt="' + esc(alt) + '" loading="lazy">\n', '', '');
+        const html = '<img src="' + esc(data.url) + '" alt="' + esc(alt) + '" loading="lazy">';
+        if (asVis) {
+          vis.focus();
+          if (saved) { sel.removeAllRanges(); sel.addRange(saved); }
+          document.execCommand('insertHTML', false, html);
+          toCode();
+        } else {
+          wrap(html + '\n', '', '');
+        }
       } catch (e) {
         window.alert(e.message || 'Upload failed');
       }
       file.value = '';
     });
   });
+
+  // Resizable columns (Visitors table). The table always fits the screen: dragging a handle trades width with the next column.
+  // The widths are remembered in this browser.
+  const rt = document.getElementById('vis-table');
+  if (rt) {
+    const ths = Array.from(rt.rows[0].cells);
+    const KEY = 'tms_vis_cols_v1';
+    const def = [17, 11, 7, 12, 12, 10, 6, 12, 13];
+    let w = def.slice();
+    try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s) && s.length === ths.length && Math.abs(s.reduce((a, b) => a + b, 0) - 100) < 1) w = s; } catch (e) { /* use default */ }
+    const cg = document.createElement('colgroup');
+    const cols = ths.map(() => cg.appendChild(document.createElement('col')));
+    rt.insertBefore(cg, rt.firstChild);
+    const apply = () => cols.forEach((c, i) => { c.style.width = w[i] + '%'; });
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(w.map((x) => Math.round(x * 10) / 10))); } catch (e) { /* private mode */ } };
+    apply();
+    Array.from(rt.rows).slice(1).forEach((r) => Array.from(r.cells).forEach((c) => { if (c.colSpan === 1) c.title = c.textContent.trim(); }));
+    ths.slice(0, -1).forEach((th, i) => {
+      const g = document.createElement('span');
+      g.className = 'col-grip';
+      th.appendChild(g);
+      g.addEventListener('pointerdown', (ev) => {
+        ev.preventDefault();
+        g.setPointerCapture(ev.pointerId);
+        g.classList.add('on');
+        const x0 = ev.clientX; const a0 = w[i]; const b0 = w[i + 1]; const total = rt.getBoundingClientRect().width;
+        const move = (e) => {
+          const d = ((e.clientX - x0) / total) * 100;
+          const nd = Math.max(-(a0 - 4), Math.min(b0 - 4, d));
+          w[i] = a0 + nd; w[i + 1] = b0 - nd; apply();
+        };
+        const up = () => { g.classList.remove('on'); g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); save(); };
+        g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+      });
+    });
+  }
 })();

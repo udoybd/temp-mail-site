@@ -112,6 +112,59 @@ final class Db
             }
             $pdo->exec('PRAGMA user_version = 9');
         }
+        if ($version < 10) {
+            // Mail now stays until the owner deletes it or the address expires (24 hours). New home text.
+            $old = 'Each email is deleted automatically 3 hours after it arrives.';
+            $new = 'Emails stay in your inbox until you delete them or the address expires, up to 24 hours.';
+            $pdo->prepare('UPDATE faqs SET answer = REPLACE(answer, ?, ?)')->execute([$old, $new]);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['Each email is deleted <strong>3 hours</strong> after it arrives.', 'Emails stay until you delete them or the address expires (up to <strong>24 hours</strong>).']);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['Emails: 3 hours after they arrive.', 'Emails: when you delete them, or when the address expires (24 hours at most).']);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['and mail is deleted after 3 hours.', 'and mail is deleted when the address expires.']);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['Emails are removed 3 hours after they arrive and addresses after 24 hours.', 'Emails and addresses are removed after 24 hours, and you can delete any email yourself.']);
+            $pdo->prepare("UPDATE settings SET value = ? WHERE key = 'content_hero_title' AND value = ?")->execute(['Free Temp Mail: Temporary Email Address in One Click', 'Free Temporary Email Address']);
+            $pdo->prepare("UPDATE settings SET value = ? WHERE key = 'content_hero_ticks' AND value = ?")->execute(['No sign-up, Lives 24 hours, Free to use', 'No sign-up, Auto-expires, Free forever']);
+            $pdo->exec('PRAGMA user_version = 10');
+        }
+        if ($version < 11) {
+            // Clearer address-reuse wording (Delete frees the name for everyone).
+            $pdo->prepare('UPDATE faqs SET answer = ? WHERE question = ?')->execute(['Yes, if you do not delete it. If you only switch to another address (New Address or Change), the old one stays yours for its full 24 hours: open it again from the list under Account, or type the same name under Change. If you press Delete, the name is free straight away for everyone, so you can take it again at once, but anyone else can take it too. After 24 hours every address is free for anyone.', 'Can I get the same address again?']);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?)')->execute(['When an address is deleted we keep the address itself (not its email) so it is never given to someone else.', 'When an address is deleted or expires, its emails are deleted too and the name becomes free for anyone to use again. We keep only a private record of the address name and its times, with no email content.']);
+            $pdo->exec('PRAGMA user_version = 11');
+        }
+        if ($version < 12) {
+            // Visitor log for /admin → Visitors (kept 30 days).
+            $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vid TEXT NOT NULL,
+    ip TEXT NOT NULL,
+    browser TEXT NOT NULL DEFAULT '',
+    bver TEXT NOT NULL DEFAULT '',
+    device TEXT NOT NULL DEFAULT '',
+    country TEXT NOT NULL DEFAULT '',
+    ref TEXT NOT NULL DEFAULT '',
+    first_at INTEGER NOT NULL,
+    last_at INTEGER NOT NULL,
+    pages INTEGER NOT NULL DEFAULT 1,
+    mails INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS visits_vid ON visits(vid);
+CREATE INDEX IF NOT EXISTS visits_first ON visits(first_at);
+CREATE INDEX IF NOT EXISTS visits_last ON visits(last_at);
+SQL);
+            $pdo->prepare('UPDATE pages SET body = REPLACE(body, ?, ?) WHERE slug = ?')->execute([
+                '<li><strong>Your IP address</strong>, in hashed form, to limit how many new addresses one network can make per day.</li>',
+                '<li><strong>Your IP address</strong>, in hashed form, to limit how many new addresses one network can make per day.</li>' . "\n" . '<li><strong>Visit statistics, for 30 days.</strong> For each visit we keep your IP address, browser, device type, country, the site you came from, how long you stayed and how many addresses you made. We use it to see how many people use the site and to stop abuse. It is deleted automatically after 30 days and never sold or shared.</li>',
+                'privacy',
+            ]);
+            $pdo->exec('PRAGMA user_version = 12');
+        }
+        if ($version < 13) {
+            // First page a visitor opened, and alt text for the blog cover image.
+            $pdo->exec("ALTER TABLE visits ADD COLUMN landing TEXT NOT NULL DEFAULT ''");
+            $pdo->exec("ALTER TABLE posts ADD COLUMN cover_alt TEXT NOT NULL DEFAULT ''");
+            $pdo->exec('PRAGMA user_version = 13');
+        }
     }
 
     /** Domains managed from /admin, daily counters that outlive cleanup, and small key/value settings. */
